@@ -1,0 +1,63 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+/* Chat Container */
+.container {
+    background: white;
+    color: black;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+}
+
+/* Input and Search */
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+input {
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #6a11cb;
+    border-radius: 5px;
+    outline: none;
+    width: 100%;
+}
+
+/* Search Results & Recent Chats */
+#suggestions, #recentChats {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+    border-radius: 5px;
+}
+
+#suggestions li, #recentChats li {
+    padding: 10px;
+    background: #f2f2f2;
+    border-bottom: 1px solid #ddd;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+#suggestions li:hover, #recentChats li:hover {
+    background: #6a11cb;
+    color: white;
+}

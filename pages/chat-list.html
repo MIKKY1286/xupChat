@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>XupChat - Chat List</title>
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <script type="module" src="chatlist.js" defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen overflow-x-hidden">
+
+  <!-- Sidebar -->
+  <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 z-50">
+    <div class="p-4 border-b flex justify-between items-center">
+      <h2 class="text-lg font-semibold">Menu</h2>
+      <button id="closeSidebar" class="text-xl">✖️</button>
+    </div>
+    <ul class="p-4 space-y-2">
+      <li><a href="../pages/profile.html" class="block p-2 rounded hover:bg-gray-100">Profile</a></li>
+      <li><a href="../pages/settings.html" class="block p-2 rounded hover:bg-gray-100">Settings</a></li>
+      <li><button id="logoutBtn" class="w-full text-left p-2 rounded hover:bg-gray-100 text-red-600">Log Out</button></li>
+    </ul>
+  </div>
+
+  <!-- Top Navbar -->
+  <nav class="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center shadow-md">
+    <h1 id="sidebarToggle" class="text-xl font-bold cursor-pointer">XupChat</h1>
+    <button id="newChatBtn" class="bg-white text-indigo-600 font-medium px-4 py-2 rounded hover:bg-indigo-100 transition">New Chat <i class='bx bx-user-plus'></i></button>
+  </nav>
+
+  <!-- Main -->
+  <main class="p-6">
+    <div class="max-w-2xl mx-auto">
+      <h2 class="text-2xl font-semibold mb-4">Chats</h2>
+      <div id="chatList" class="bg-white rounded-lg shadow-md p-4 divide-y">
+        <!-- Dynamic chat list will be injected here -->
+      </div>
+    </div>
+    <!-- New Chat Modal -->
+    <div id="newChatModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold">Start New Chat</h2>
+        <button id="closeModal" class="text-xl">✖️</button>
+      </div>
+      <input type="text" id="searchInput" placeholder="Search by name or email..." class="w-full p-2 border rounded mb-4 focus:outline-none focus:ring" />
+      <div id="searchResults" class="space-y-3 max-h-60 overflow-y-auto"></div>
+    </div>
+  </div>
+  
+  </main>
+   <script type="Module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyCsa2c82g1OHNU2HcxCyQLr5RSM7DEDQXM",
+  authDomain: "deepvoid-6baf3.firebaseapp.com",
+  projectId: "deepvoid-6baf3",
+  storageBucket: "deepvoid-6baf3.appspot.com",
+  messagingSenderId: "648550508783",
+  appId: "1:648550508783:web:6220982bf050d8e74b531a"
+};
+
+// Init Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Redirect if not logged in
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "login.html";
+  } else {
+    loadChatList(user.uid);
+  }
+});
+
+// Load chat list
+async function loadChatList(currentUserId) {
+  const chatListEl = document.getElementById("chatList");
+  chatListEl.innerHTML = `<p class="text-gray-500 text-center">Loading chats...</p>`;
+
+  try {
+    const usersSnapshot = await getDocs(collection(db, "users"));
+    const users = [];
+
+    usersSnapshot.forEach(doc => {
+      const userData = doc.data();
+      if (userData.uid !== currentUserId) {
+        users.push(userData);
+      }
+    });
+
+    if (users.length === 0) {
+      chatListEl.innerHTML = `<p class="text-gray-500 text-center">No other users found.</p>`;
+      return;
+    }
+
+    chatListEl.innerHTML = "";
+    users.forEach(user => {
+      const userDiv = document.createElement("div");
+      userDiv.className = "py-3 flex justify-between items-center hover:bg-gray-100 cursor-pointer";
+      userDiv.innerHTML = `
+        <div>
+          <p class="font-semibold text-gray-800">${user.name}</p>
+          <p class="text-sm text-gray-500">${user.email}</p>
+        </div>
+        <button class="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600" onclick="startChat('${user.uid}', '${user.name}')">Chat</button>
+      `;
+      chatListEl.appendChild(userDiv);
+    });
+  } catch (err) {
+    console.error("Failed to load users:", err.message);
+    chatListEl.innerHTML = `<p class="text-red-500 text-center">Error loading chats.</p>`;
+  }
+}
+
+// Start a new chat
+window.startChat = function (uid, name) {
+  localStorage.setItem("chatWithUID", uid);
+  localStorage.setItem("chatWithName", name);
+  window.location.href = "../pages/chat.html";
+};
+
+// New Chat Button
+document.getElementById("newChatBtn").addEventListener("click", () => {
+  alert("✨ Coming soon: Start a new conversation!");
+  // You can show a modal or navigate to a new user search page
+});
+
+// Sidebar toggle logic
+document.getElementById("sidebarToggle").addEventListener("click", () => {
+  document.getElementById("sidebar").classList.remove("-translate-x-full");
+});
+document.getElementById("closeSidebar").addEventListener("click", () => {
+  document.getElementById("sidebar").classList.add("-translate-x-full");
+});
+
+// Logout
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await signOut(auth);
+  window.location.href = "login.html";
+});
+const newChatModal = document.getElementById("newChatModal");
+const closeModalBtn = document.getElementById("closeModal");
+const searchInput = document.getElementById("searchInput");
+const searchResults = document.getElementById("searchResults");
+
+let currentUserID = null;
+
+// Track user ID globally
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    currentUserID = user.uid;
+  }
+});
+
+// Open New Chat Modal
+document.getElementById("newChatBtn").addEventListener("click", () => {
+  newChatModal.classList.remove("hidden");
+  searchInput.value = "";
+  searchResults.innerHTML = "";
+  searchInput.focus();
+});
+
+// Close Modal
+closeModalBtn.addEventListener("click", () => {
+  newChatModal.classList.add("hidden");
+});
+
+// Search functionality
+searchInput.addEventListener("input", async (e) => {
+  const keyword = e.target.value.trim().toLowerCase();
+  searchResults.innerHTML = "";
+
+  if (!keyword) return;
+
+  const snapshot = await getDocs(collection(db, "users"));
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    const nameMatch = data.name?.toLowerCase().includes(keyword);
+    const emailMatch = data.email?.toLowerCase().includes(keyword);
+
+    if ((nameMatch || emailMatch) && data.uid !== currentUserID) {
+      const resultItem = document.createElement("div");
+      resultItem.className = "p-3 border rounded hover:bg-gray-100 flex justify-between items-center";
+      resultItem.innerHTML = `
+        <div>
+          <p class="font-semibold">${data.name}</p>
+          <p class="text-sm text-gray-500">${data.email}</p>
+        </div>
+        <button class="bg-indigo-500 text-white px-3 py-1 rounded" onclick="startChat('${data.uid}', '${data.name}')">Chat</button>
+      `;
+      searchResults.appendChild(resultItem);
+    }
+  });
+
+  if (searchResults.innerHTML === "") {
+    searchResults.innerHTML = `<p class="text-gray-500 text-sm text-center">No users found.</p>`;
+  }
+});
+
+   </script>
+</body>
+</html>

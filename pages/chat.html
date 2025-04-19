@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XupChat – Chat</title>
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <script type="module" src="chat.js" defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen">
+
+  <div class="flex flex-col h-full">
+    <!-- Top Navbar -->
+    <nav class="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center shadow-md">
+      <button id="backBtn" class="text-xl"><i class='bx bx-chevron-left'></i></button>
+      <h1 id="chatUserName" class="text-xl font-bold">Loading...</h1>
+      <button id="logoutBtn" class="bg-white text-indigo-600 font-medium px-4 py-2 rounded hover:bg-indigo-100 transition">Log Out</button>
+    </nav>
+
+    <!-- Chat Area -->
+    <div id="chatArea" class="flex-1 p-4 space-y-3 overflow-y-auto bg-white shadow-md flex flex-col-reverse">
+      <!-- Messages will be dynamically loaded here -->
+    </div>
+
+    <!-- Typing Indicator -->
+    <div id="typingIndicator" class="p-2 text-sm text-gray-500 italic hidden">
+      <span id="typingText">User is typing...</span>
+    </div>
+
+    <!-- Message Input -->
+    <div class="p-4 bg-white flex items-center">
+      <input type="text" id="messageInput" class="w-full p-2 border rounded-md focus:outline-none focus:ring" placeholder="Type a message" />
+      <button id="sendBtn" class="ml-2 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700">Send</button>
+    </div>
+  </div>
+
+  <!-- Firebase SDK Imports -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCsa2c82g1OHNU2HcxCyQLr5RSM7DEDQXM",
+      authDomain: "deepvoid-6baf3.firebaseapp.com",
+      projectId: "deepvoid-6baf3",
+      storageBucket: "deepvoid-6baf3.appspot.com",
+      messagingSenderId: "648550508783",
+      appId: "1:648550508783:web:6220982bf050d8e74b531a"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Get user details from localStorage
+    const chatWithUID = localStorage.getItem('chatWithUID');
+    const chatWithName = localStorage.getItem('chatWithName');
+    let currentUserID = null;
+
+    // Get the logged-in user
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUserID = user.uid;
+        loadChatMessages();
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    // Back button
+    document.getElementById("backBtn").addEventListener("click", () => {
+      window.location.href = "../pages/chat-list.html";
+    });
+
+    // Load chat messages
+    function loadChatMessages() {
+      // Set the chat name
+      document.getElementById("chatUserName").innerText = chatWithName;
+
+      // Set up the chat room ID (ensuring it’s unique)
+      const chatRoomId = [currentUserID, chatWithUID].sort().join("_");
+      const chatQuery = query(collection(db, "chats"), where("roomId", "==", chatRoomId));
+
+      // Listen for new messages in the chat room
+      onSnapshot(chatQuery, (snapshot) => {
+        const chatArea = document.getElementById("chatArea");
+        chatArea.innerHTML = ''; // Clear previous messages
+
+        snapshot.forEach(doc => {
+          const message = doc.data();
+          const messageEl = document.createElement("div");
+          messageEl.className = message.sender === currentUserID 
+            ? "p-3 bg-indigo-200 text-right rounded-full max-w-xs ml-auto" 
+            : "p-3 bg-gray-200 text-left rounded-full max-w-xs mr-auto";
+
+          // Check if the message is a reply to another message
+          if (message.replyTo) {
+            const replyMessageDiv = document.createElement("div");
+            replyMessageDiv.className = "p-3 bg-gray-100 text-left rounded-md ml-6 my-2 text-sm";
+            replyMessageDiv.innerHTML = `<strong>Reply:</strong> ${message.replyText || 'No content'}`;
+            messageEl.prepend(replyMessageDiv); // Prepend the reply message above the current message
+          }
+
+          messageEl.innerText = message.text;
+          chatArea.appendChild(messageEl);
+          chatArea.scrollTop = chatArea.scrollHeight; // Auto-scroll to bottom
+        });
+      });
+
+      // Listen for typing indicator
+      const typingRef = doc(db, "typing", chatRoomId);
+      onSnapshot(typingRef, (doc) => {
+        const typingData = doc.data();
+        const typingIndicator = document.getElementById("typingIndicator");
+        if (typingData && typingData.isTyping && typingData.userId !== currentUserID) {
+          typingIndicator.classList.remove("hidden");
+        } else {
+          typingIndicator.classList.add("hidden");
+        }
+      });
+    }
+
+    // Send a new message
+    document.getElementById("sendBtn").addEventListener("click", async () => {
+      const messageText = document.getElementById("messageInput").value.trim();
+
+      if (messageText) {
+        const newMessage = {
+          sender: currentUserID,
+          receiver: chatWithUID,
+          text: messageText,
+          roomId: [currentUserID, chatWithUID].sort().join("_"),
+          timestamp: serverTimestamp(),
+          replyTo: null,
+          replyText: null
+        };
+
+        await addDoc(collection(db, "chats"), newMessage);
+        document.getElementById("messageInput").value = ""; // Clear input
+
+        // Update typing status
+        await updateDoc(doc(db, "typing", [currentUserID, chatWithUID].sort().join("_")), {
+          isTyping: false,
+        });
+      }
+    });
+
+    // Typing indicator logic
+    document.getElementById("messageInput").addEventListener("input", async () => {
+      // Update typing status
+      await updateDoc(doc(db, "typing", [currentUserID, chatWithUID].sort().join("_")), {
+        isTyping: true,
+        userId: currentUserID,
+      });
+
+      // Reset typing status after 2 seconds of inactivity
+      clearTimeout(window.typingTimeout);
+      window.typingTimeout = setTimeout(async () => {
+        await updateDoc(doc(db, "typing", [currentUserID, chatWithUID].sort().join("_")), {
+          isTyping: false,
+        });
+      }, 2000);
+    });
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await signOut(auth);
+      window.location.href = "login.html";
+    });
+  </script>
+
+</body>
+</html>

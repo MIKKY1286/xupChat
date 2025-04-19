@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XupChat – Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+  <!-- Login Card -->
+  <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md space-y-6">
+    <h2 class="text-3xl font-bold text-center text-indigo-600">Login to XupChat</h2>
+
+    <div class="space-y-4">
+      <input id="email" type="email" placeholder="Email"
+        class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+
+      <!-- Password input with toggle visibility -->
+      <div class="relative">
+        <input id="password" type="password" placeholder="Password"
+          class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        <button type="button" id="togglePassword" class="absolute top-3 right-3 text-indigo-600 hover:text-indigo-800">
+          👁️
+        </button>
+      </div>
+
+      <!-- Add an id to the login button for easier reference -->
+      <button id="loginButton" 
+        class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition">
+        Log In
+      </button>
+
+      <a href="../pages/chat-list.html"></a>
+      <p class="text-center text-sm text-gray-600">
+        Don’t have an account?
+        <a href="signup.html" class="text-indigo-600 hover:underline">Sign up</a>
+      </p>
+      <p class="text-center text-sm text-gray-600">
+        <a class="text-indigo-600 hover:underline" href=""></a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Firebase Auth Script -->
+  <script type="module">
+    // Initialize Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+    const firebaseConfig = {
+     apiKey: "AIzaSyCsa2c82g1OHNU2HcxCyQLr5RSM7DEDQXM",
+     authDomain: "deepvoid-6baf3.firebaseapp.com",
+     projectId: "deepvoid-6baf3",
+     storageBucket: "deepvoid-6baf3.firebasestorage.app",
+     messagingSenderId: "648550508783",
+     appId: "1:648550508783:web:6220982bf050d8e74b531a"
+    };
+
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Password visibility toggle functionality
+    document.getElementById("togglePassword").addEventListener("click", function () {
+      const passwordInput = document.getElementById("password");
+      const type = passwordInput.type === "password" ? "text" : "password";
+      passwordInput.type = type;
+      this.innerText = type === "password" ? "👁️" : "🙈";
+    });
+
+    // Login Button functionality using the id
+    document.getElementById("loginButton").addEventListener("click", logIn);
+
+    // Log in function
+    async function logIn() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        showCustomAlert('success', '🔓 Logged in successfully!');
+        
+        // Redirect to the chat list page upon successful login
+        setTimeout(() => {
+          window.location.href = "../pages/chat-list.html"; // Replace with your chat list page URL
+        }, 1500); // Wait for alert to appear before redirecting
+      } catch (err) {
+        showCustomAlert('error', `❌ ${err.message}`);
+        console.error(err);
+      }
+    }
+
+    // Custom alert function
+    function showCustomAlert(type, message) {
+      const alertBox = document.createElement('div');
+      alertBox.classList.add('fixed', 'top-0', 'left-0', 'w-full', 'h-full', 'flex', 'items-center', 'justify-center', 'bg-gray-900', 'bg-opacity-50', 'z-50');
+      alertBox.innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+          <div class="flex items-center">
+            <div class="${type === 'success' ? 'text-green-500' : 'text-red-500'} text-3xl mr-3">
+              ${type === 'success' ? '✅' : '❌'}
+            </div>
+            <div class="text-lg font-semibold">${message}</div>
+          </div>
+          <button id="closeAlert" class="mt-4 w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Close</button>
+        </div>
+      `;
+      document.body.appendChild(alertBox);
+
+      // Adding event listener for close button
+      document.getElementById("closeAlert").addEventListener("click", closeAlert);
+    }
+
+    function closeAlert() {
+      const alertBox = document.querySelector('div.fixed');
+      alertBox.remove();
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XupChat – Settings</title>
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <script type="module" src="settings.js" defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 font-sans min-h-screen">
+
+  <div class="flex flex-col h-full">
+    <!-- Top Navbar -->
+    <nav class="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center shadow-md">
+      <button id="backBtn" class="text-xl"><i class='bx bx-chevron-left'></i></button>
+      <h1 class="text-xl font-bold">Settings</h1>
+      <button id="logoutBtn" class="bg-white text-indigo-600 font-medium px-4 py-2 rounded hover:bg-indigo-100 transition">Log Out</button>
+    </nav>
+
+    <!-- Settings Form -->
+    <div class="flex-1 p-4 bg-white shadow-md">
+      <h2 class="text-lg font-semibold mb-4">Update Profile</h2>
+      
+      <form id="settingsForm">
+        <div class="mb-4">
+          <label for="displayName" class="block text-sm font-medium text-gray-700">Display Name</label>
+          <input type="text" id="displayName" class="w-full p-2 border rounded-md focus:outline-none focus:ring" placeholder="Enter your display name" />
+        </div>
+
+        <div class="mb-4">
+          <label for="profilePicture" class="block text-sm font-medium text-gray-700">Profile Picture</label>
+          <input type="file" id="profilePicture" accept="image/*" class="w-full p-2 border rounded-md focus:outline-none focus:ring" />
+        </div>
+
+        <div class="mb-4">
+          <button type="submit" id="saveSettings" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Save Changes</button>
+        </div>
+      </form>
+
+      <!-- Password Change Form -->
+      <div class="mt-8">
+        <h2 class="text-lg font-semibold mb-4">Change Password</h2>
+        <form id="passwordChangeForm">
+          <div class="mb-4">
+            <label for="currentPassword" class="block text-sm font-medium text-gray-700">Current Password</label>
+            <input type="password" id="currentPassword" class="w-full p-2 border rounded-md focus:outline-none focus:ring" placeholder="Enter current password" required />
+          </div>
+
+          <div class="mb-4">
+            <label for="newPassword" class="block text-sm font-medium text-gray-700">New Password</label>
+            <input type="password" id="newPassword" class="w-full p-2 border rounded-md focus:outline-none focus:ring" placeholder="Enter new password" required />
+          </div>
+
+          <div class="mb-4">
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+            <input type="password" id="confirmPassword" class="w-full p-2 border rounded-md focus:outline-none focus:ring" placeholder="Confirm new password" required />
+          </div>
+
+          <div class="mb-4">
+            <button type="submit" id="changePasswordBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Change Password</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK Imports -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+    import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
+
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCsa2c82g1OHNU2HcxCyQLr5RSM7DEDQXM",
+      authDomain: "deepvoid-6baf3.firebaseapp.com",
+      projectId: "deepvoid-6baf3",
+      storageBucket: "deepvoid-6baf3.appspot.com",
+      messagingSenderId: "648550508783",
+      appId: "1:648550508783:web:6220982bf050d8e74b531a"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    let currentUserID = null;
+
+    // Get the logged-in user
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUserID = user.uid;
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    // Back button
+    document.getElementById("backBtn").addEventListener("click", () => {
+      window.location.href = "profile.html";
+    });
+
+    // Save settings
+    document.getElementById("settingsForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const displayName = document.getElementById("displayName").value;
+      const profilePicture = document.getElementById("profilePicture").files[0];
+
+      let profilePicUrl = null;
+
+      // Upload new profile picture if chosen
+      if (profilePicture) {
+        const storageRef = ref(storage, `profile_pictures/${currentUserID}`);
+        const uploadTask = uploadBytesResumable(storageRef, profilePicture);
+
+        uploadTask.on(
+          "state_changed",
+          null,
+          (error) => {
+            console.error("Error uploading profile picture:", error);
+          },
+          async () => {
+            profilePicUrl = await getDownloadURL(uploadTask.snapshot.ref());
+            saveUserData(displayName, profilePicUrl);
+          }
+        );
+      } else {
+        saveUserData(displayName, profilePicUrl);
+      }
+    });
+
+    // Save user data to Firestore
+    async function saveUserData(displayName, profilePicUrl) {
+      const userRef = doc(db, "users", currentUserID);
+      const updatedData = {
+        displayName: displayName,
+      };
+
+      if (profilePicUrl) {
+        updatedData.profilePicture = profilePicUrl;
+      }
+
+      await updateDoc(userRef, updatedData);
+
+      // Notify user that settings are saved
+      alert("Settings saved successfully!");
+    }
+
+    // Change Password
+    document.getElementById("passwordChangeForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const currentPassword = document.getElementById("currentPassword").value;
+      const newPassword = document.getElementById("newPassword").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+
+      if (newPassword !== confirmPassword) {
+        alert("New passwords do not match!");
+        return;
+      }
+
+      const user = auth.currentUser;
+
+      // Re-authenticate the user before updating password
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      try {
+        await reauthenticateWithCredential(user, credential);
+        await updatePassword(user, newPassword);
+        alert("Password changed successfully!");
+      } catch (error) {
+        alert("Failed to change password: " + error.message);
+      }
+    });
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await signOut(auth);
+      window.location.href = "login.html";
+    });
+  </script>
+
+</body>
+
+</html>

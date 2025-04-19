@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Profile - XupChat</title>
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <script type="module" src="profile.js" defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen">
+
+  <!-- Top Navbar -->
+  <nav class="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center shadow-md">
+    <button id="backBtn" class="text-xl"><i class='bx bx-chevron-left'></i></button>
+    <h1 class="text-xl font-bold">XupChat - Profile</h1>
+    <button id="logoutBtn" class="bg-white text-indigo-600 px-4 py-2 rounded hover:bg-indigo-100 transition">Log Out</button>
+  </nav>
+
+  <!-- Main -->
+  <main class="p-6">
+    <div class="max-w-2xl mx-auto">
+      <!-- Profile Section -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Your Profile</h2>
+
+        <!-- Profile Image -->
+        <div class="flex justify-center mb-4">
+          <img id="profileImage" src="https://www.gravatar.com/avatar/?d=mp&s=100" class="rounded-full w-24 h-24 object-cover" alt="Profile Picture">
+        </div>
+
+        <!-- Profile Form -->
+        <form id="profileForm" class="space-y-4">
+          <div>
+            <label for="displayName" class="block text-gray-700">Display Name</label>
+            <input type="text" id="displayName" class="w-full p-2 border rounded focus:outline-none focus:ring" placeholder="Enter your display name">
+          </div>
+
+          <div>
+            <label for="email" class="block text-gray-700">Email</label>
+            <input type="email" id="email" class="w-full p-2 border rounded focus:outline-none focus:ring" disabled placeholder="Enter your email">
+          </div>
+
+          <!-- Profile Picture Update -->
+          <div>
+            <label for="profilePic" class="block text-gray-700">Change Profile Picture</label>
+            <input type="file" id="profilePic" class="w-full p-2 border rounded focus:outline-none focus:ring">
+          </div>
+
+          <button type="submit" id="saveBtn" class="w-full bg-indigo-600 text-white py-2 rounded mt-4 hover:bg-indigo-700 transition">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCsa2c82g1OHNU2HcxCyQLr5RSM7DEDQXM",
+      authDomain: "deepvoid-6baf3.firebaseapp.com",
+      projectId: "deepvoid-6baf3",
+      storageBucket: "deepvoid-6baf3.appspot.com",
+      messagingSenderId: "648550508783",
+      appId: "1:648550508783:web:6220982bf050d8e74b531a"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    let currentUser = null;
+
+    // Check user authentication
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        currentUser = user;
+        loadUserProfile();
+      }
+    });
+
+    // Load user profile
+    async function loadUserProfile() {
+      try {
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          
+          // Set the profile details
+          document.getElementById("displayName").value = userData.displayName || currentUser.displayName || "";
+          document.getElementById("email").value = currentUser.email;
+
+          // Set profile picture (from Firestore or fallback to default)
+          document.getElementById("profileImage").src = userData.profilePic || "https://www.gravatar.com/avatar/?d=mp&s=100";
+        }
+      } catch (error) {
+        console.error("Error loading profile:", error.message);
+      }
+    }
+
+    // Handle profile update form submission
+    document.getElementById("profileForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const displayName = document.getElementById("displayName").value;
+      const fileInput = document.getElementById("profilePic");
+
+      try {
+        // Update user display name
+        await updateProfile(currentUser, { displayName });
+
+        // If there's a new profile picture, upload it
+        if (fileInput.files[0]) {
+          const file = fileInput.files[0];
+          const storageRef = ref(storage, `profile_pictures/${currentUser.uid}`);
+          const uploadTask = uploadBytesResumable(storageRef, file);
+
+          uploadTask.on('state_changed', null, (error) => {
+            console.error("Upload error:", error.message);
+          }, async () => {
+            // Get the download URL after the file is uploaded
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            await setDoc(doc(db, "users", currentUser.uid), { profilePic: downloadURL }, { merge: true });
+            document.getElementById("profileImage").src = downloadURL;
+          });
+        }
+
+        // Save display name to Firestore
+        await setDoc(doc(db, "users", currentUser.uid), { displayName }, { merge: true });
+        alert("Profile updated successfully!");
+      } catch (error) {
+        console.error("Error updating profile:", error.message);
+      }
+    });
+
+    // Back button
+    document.getElementById("backBtn").addEventListener("click", () => {
+      window.location.href = "../pages/chat-list.html";
+    });
+
+    // Handle logout
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await signOut(auth);
+      window.location.href = "login.html";
+    });
+  </script>
+</body>
+</html>
