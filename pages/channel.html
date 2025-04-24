@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp-like Channel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <style>
+    .message-container {
+      scrollbar-width: thin;
+      scrollbar-color: #CBD5E0 #EDF2F7;
+    }
+    .message-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .message-container::-webkit-scrollbar-track {
+      background: #EDF2F7;
+    }
+    .message-container::-webkit-scrollbar-thumb {
+      background-color: #CBD5E0;
+      border-radius: 3px;
+    }
+    .fade-in {
+      animation: fadeIn 0.3s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 h-screen flex">
+  <!-- Sidebar -->
+  <div class="w-1/4 border-r border-gray-200 bg-white hidden md:block">
+    <div class="p-3 border-b border-gray-200 bg-gray-50">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <img id="userAvatar" src="https://via.placeholder.com/40" class="w-10 h-10 rounded-full">
+          <span id="userName" class="ml-2 font-medium">User</span>
+        </div>
+        <div class="flex space-x-3">
+          <button id="signInBtn" class="text-gray-600 hover:text-gray-800">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+            </svg>
+          </button>
+          <button id="signOutBtn" class="text-gray-600 hover:text-gray-800 hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="overflow-y-auto h-full">
+      <div class="p-3 border-b border-gray-200 bg-green-50">
+        <h2 class="font-semibold text-gray-700">Channels</h2>
+      </div>
+      <div id="channelList" class="divide-y divide-gray-100">
+        <!-- Channels will be added here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Chat Area -->
+  <div class="flex-1 flex flex-col">
+    <!-- Channel Header -->
+    <div class="p-3 border-b border-gray-200 bg-gray-50 flex items-center">
+      <div class="flex items-center">
+        <div class="bg-green-500 text-white rounded-full w-10 h-10 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h2 id="currentChannel" class="font-semibold">Channel Name</h2>
+          <p class="text-xs text-gray-500">Broadcast channel</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div id="messages" class="flex-1 overflow-y-auto p-4 bg-[#e5ddd5] message-container">
+      <div class="flex justify-center mb-4">
+        <div class="bg-white rounded-lg px-3 py-1 text-sm text-gray-600 shadow">
+          Today
+        </div>
+      </div>
+      <!-- Messages will be added here -->
+    </div>
+
+    <!-- Message Input -->
+    <div class="p-3 bg-gray-50 border-t border-gray-200">
+      <form id="messageForm" class="flex items-center">
+        <button type="button" class="p-2 text-gray-500 hover:text-gray-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+        <input 
+          id="messageInput" 
+          type="text" 
+          placeholder="Type a message" 
+          class="flex-1 border border-gray-300 rounded-full px-4 py-2 mx-2 focus:outline-none focus:border-green-500"
+          disabled
+        >
+        <button 
+          type="submit" 
+          id="sendBtn"
+          class="p-2 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+          disabled
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+          </svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Firebase config - replace with your actual config
+    const firebaseConfig = {
+  apiKey: "AIzaSyCsa2c82g1OHNU2HcxCyQLr5RSM7DEDQXM",
+  authDomain: "deepvoid-6baf3.firebaseapp.com",
+  projectId: "deepvoid-6baf3",
+  storageBucket: "deepvoid-6baf3.appspot.com",
+  messagingSenderId: "648550508783",
+  appId: "1:648550508783:web:6220982bf050d8e74b531a"
+};
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const provider = new firebase.auth.GoogleAuthProvider();
+
+    // DOM Elements
+    const messagesContainer = document.getElementById('messages');
+    const messageForm = document.getElementById('messageForm');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const signInBtn = document.getElementById('signInBtn');
+    const signOutBtn = document.getElementById('signOutBtn');
+    const userAvatar = document.getElementById('userAvatar');
+    const userName = document.getElementById('userName');
+    const currentChannel = document.getElementById('currentChannel');
+    const channelList = document.getElementById('channelList');
+
+    // Current state
+    let currentUser = null;
+    let currentChannelId = 'general';
+
+    // Sample channels (you would fetch these from Firestore in a real app)
+    const channels = [
+      { id: 'general', name: 'General' },
+      { id: 'announcements', name: 'Announcements' },
+      { id: 'random', name: 'Random' }
+    ];
+
+    // Initialize the app
+    function initApp() {
+      renderChannels();
+      setupAuth();
+      loadMessages();
+    }
+
+    // Render channel list
+    function renderChannels() {
+      channelList.innerHTML = '';
+      channels.forEach(channel => {
+        const channelElement = document.createElement('div');
+        channelElement.className = 'p-3 hover:bg-gray-50 cursor-pointer';
+        channelElement.innerHTML = `
+          <div class="flex items-center">
+            <div class="bg-gray-200 rounded-full w-10 h-10 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <h3 class="font-medium">${channel.name}</h3>
+              <p class="text-xs text-gray-500">Broadcast channel</p>
+            </div>
+          </div>
+        `;
+        channelElement.addEventListener('click', () => switchChannel(channel.id, channel.name));
+        channelList.appendChild(channelElement);
+      });
+      
+      // Set default channel
+      if (channels.length > 0) {
+        currentChannelId = channels[0].id;
+        currentChannel.textContent = channels[0].name;
+      }
+    }
+
+    // Switch channels
+    function switchChannel(channelId, channelName) {
+      currentChannelId = channelId;
+      currentChannel.textContent = channelName;
+      loadMessages();
+    }
+
+    // Setup authentication
+    function setupAuth() {
+      auth.onAuthStateChanged(user => {
+        currentUser = user;
+        
+        if (user) {
+          // User is signed in
+          userAvatar.src = user.photoURL || 'https://via.placeholder.com/40';
+          userName.textContent = user.displayName || 'User';
+          signInBtn.classList.add('hidden');
+          signOutBtn.classList.remove('hidden');
+          messageInput.disabled = false;
+          sendBtn.disabled = false;
+        } else {
+          // User is signed out
+          userAvatar.src = 'https://via.placeholder.com/40';
+          userName.textContent = 'User';
+          signInBtn.classList.remove('hidden');
+          signOutBtn.classList.add('hidden');
+          messageInput.disabled = true;
+          sendBtn.disabled = true;
+        }
+      });
+
+      signInBtn.addEventListener('click', () => {
+        auth.signInWithPopup(provider).catch(error => {
+          console.error('Sign in error:', error);
+        });
+      });
+
+      signOutBtn.addEventListener('click', () => {
+        auth.signOut();
+      });
+    }
+
+    // Load messages
+    function loadMessages() {
+      messagesContainer.innerHTML = `
+        <div class="flex justify-center mb-4">
+          <div class="bg-white rounded-lg px-3 py-1 text-sm text-gray-600 shadow">
+            Today
+          </div>
+        </div>
+      `;
+      
+      db.collection('channels')
+        .doc(currentChannelId)
+        .collection('messages')
+        .orderBy('timestamp', 'asc')
+        .onSnapshot(snapshot => {
+          snapshot.docChanges().forEach(change => {
+            if (change.type === 'added') {
+              const message = change.doc.data();
+              addMessageToDOM(message, change.doc.id);
+            }
+          });
+          scrollToBottom();
+        });
+    }
+
+    // Add message to DOM
+    function addMessageToDOM(message, messageId) {
+      const isCurrentUser = currentUser && message.user?.uid === currentUser.uid;
+      const messageDate = message.timestamp?.toDate();
+      
+      const messageElement = document.createElement('div');
+      messageElement.className = 'fade-in mb-2';
+      messageElement.innerHTML = `
+        <div class="flex ${isCurrentUser ? 'justify-end' : 'justify-start'}">
+          <div class="${isCurrentUser ? 'bg-green-100' : 'bg-white'} rounded-lg py-2 px-3 max-w-xs md:max-w-md lg:max-w-lg shadow">
+            ${!isCurrentUser && message.user ? `
+              <div class="font-medium text-sm text-gray-700">${message.user.displayName}</div>
+            ` : ''}
+            <div class="text-gray-800">${message.text}</div>
+            <div class="text-right">
+              <span class="text-xs text-gray-500">${formatTime(messageDate)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+      messagesContainer.appendChild(messageElement);
+    }
+
+    // Format time
+    function formatTime(date) {
+      if (!date) return '';
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Scroll to bottom
+    function scrollToBottom() {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Send message
+    messageForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = messageInput.value.trim();
+      
+      if (text && currentUser) {
+        try {
+          await db.collection('channels')
+            .doc(currentChannelId)
+            .collection('messages')
+            .add({
+              text: text,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              user: {
+                uid: currentUser.uid,
+                displayName: currentUser.displayName,
+                photoURL: currentUser.photoURL
+              }
+            });
+          messageInput.value = '';
+        } catch (error) {
+          console.error('Error sending message:', error);
+        }
+      }
+    });
+
+    // Initialize the app
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+  <!-- Add this after your other Firebase scripts -->
+<script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-messaging.js"></script>
+</body>
+</html>
