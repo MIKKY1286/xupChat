@@ -31,11 +31,46 @@
       from { opacity: 0; transform: translateY(5px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    
+    /* Mobile sidebar styles */
+    .sidebar {
+      transition: transform 0.3s ease;
+    }
+    .sidebar-hidden {
+      transform: translateX(-100%);
+    }
+    .sidebar-visible {
+      transform: translateX(0);
+    }
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 10;
+    }
+    .overlay-visible {
+      display: block;
+    }
+    @media (min-width: 768px) {
+      .sidebar {
+        transform: translateX(0) !important;
+      }
+      .overlay {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-50 h-screen flex">
+  <!-- Mobile overlay -->
+  <div id="overlay" class="overlay"></div>
+  
   <!-- Sidebar -->
-  <div class="w-1/4 border-r border-gray-200 bg-white hidden md:block">
+  <div id="sidebar" class="sidebar fixed md:relative z-20 w-3/4 md:w-1/4 h-full border-r border-gray-200 bg-white sidebar-hidden md:sidebar-visible">
     <div class="p-3 border-b border-gray-200 bg-gray-50">
       <div class="flex items-center justify-between">
         <div class="flex items-center">
@@ -89,17 +124,24 @@
 
   <!-- Main Chat Area -->
   <div class="flex-1 flex flex-col">
-    <!-- Channel Header -->
-    <div class="p-3 border-b border-gray-200 bg-gray-50 flex items-center">
+    <!-- Channel Header with mobile menu button -->
+    <div class="p-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
       <div class="flex items-center">
-        <div class="bg-green-500 text-white rounded-full w-10 h-10 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+        <button id="menuBtn" class="md:hidden mr-2 text-gray-600 hover:text-gray-800">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
-        </div>
-        <div class="ml-3">
-          <h2 id="currentChannel" class="font-semibold">Channel Name</h2>
-          <p class="text-xs text-gray-500">Broadcast channel</p>
+        </button>
+        <div class="flex items-center">
+          <div class="bg-green-500 text-white rounded-full w-10 h-10 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h2 id="currentChannel" class="font-semibold">Channel Name</h2>
+            <p class="text-xs text-gray-500">Broadcast channel</p>
+          </div>
         </div>
       </div>
     </div>
@@ -169,6 +211,9 @@
     const userName = document.getElementById('userName');
     const currentChannel = document.getElementById('currentChannel');
     const channelList = document.getElementById('channelList');
+    const menuBtn = document.getElementById('menuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
 
     const createChannelForm = document.getElementById('createChannelForm');
     const newChannelNameInput = document.getElementById('newChannelName');
@@ -181,6 +226,31 @@
     function initApp() {
       setupAuth();
       loadChannels();
+      setupMobileMenu();
+    }
+
+    // Setup mobile menu toggle
+    function setupMobileMenu() {
+      menuBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('sidebar-visible');
+        sidebar.classList.toggle('sidebar-hidden');
+        overlay.classList.toggle('overlay-visible');
+      });
+      
+      overlay.addEventListener('click', () => {
+        sidebar.classList.remove('sidebar-visible');
+        sidebar.classList.add('sidebar-hidden');
+        overlay.classList.remove('overlay-visible');
+      });
+      
+      // Close menu when a channel is clicked (on mobile)
+      channelList.addEventListener('click', (e) => {
+        if (e.target.closest('.p-3.hover\\:bg-gray-50.cursor-pointer')) {
+          sidebar.classList.remove('sidebar-visible');
+          sidebar.classList.add('sidebar-hidden');
+          overlay.classList.remove('overlay-visible');
+        }
+      });
     }
 
     // Load channels from Firestore
