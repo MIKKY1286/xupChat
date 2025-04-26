@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XupChat - Notifications</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-messaging-compat.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Main App UI -->
+    <div id="app-container" class="hidden">
+        <div class="max-w-2xl mx-auto my-8">
+            <!-- Header with User Info -->
+            <div class="bg-indigo-600 text-white p-6 rounded-t-xl flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold">Notifications</h1>
+                    <div class="flex items-center mt-1">
+                        <img id="user-avatar" class="h-6 w-6 rounded-full mr-2" src="" alt="User avatar">
+                        <p class="text-indigo-200 text-sm">You have <span id="unread-count" class="font-semibold">0</span> new messages</p>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="mark-all-read" class="px-3 py-1 bg-indigo-700 hover:bg-indigo-800 rounded-md text-sm transition">
+                        Mark all as read
+                    </button>
+                    <button id="sign-out-btn" class="px-3 py-1 bg-indigo-700 hover:bg-indigo-800 rounded-md text-sm transition">
+                        Sign Out
+                    </button>
+                </div>
+            </div>
+            <!-- Notification List -->
+            <div id="notification-list" class="bg-white rounded-b-xl shadow divide-y divide-gray-200">
+                <div class="p-8 text-center text-gray-500">
+                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                    <p>Loading your notifications...</p>
+                </div>
+            </div>
+            <!-- Load More Button -->
+            <div class="mt-4 text-center hidden" id="load-more-container">
+                <button id="load-more" class="px-4 py-2 bg-white hover:bg-gray-50 text-indigo-600 rounded-lg shadow-sm border border-gray-300 text-sm font-medium">
+                    Load More Notifications
+                </button>
+            </div>
+        </div>
+        <!-- Notification Badge -->
+        <div id="notification-badge" class="fixed bottom-6 right-6 bg-red-500 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg cursor-pointer hover:bg-red-600 transition hidden">
+            <i class="fas fa-bell"></i>
+            <span id="badge-count" class="absolute -top-1 -right-1 bg-indigo-600 text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+        </div>
+    </div>
+    <script>
+        // Firebase configuration (replace with your actual config)
+        const firebaseConfig = {
+     apiKey: "AIzaSyCsa2c82g1OHNU2HcxCyQLr5RSM7DEDQXM",
+     authDomain: "deepvoid-6baf3.firebaseapp.com",
+     projectId: "deepvoid-6baf3",
+     storageBucket: "deepvoid-6baf3.firebasestorage.app",
+     messagingSenderId: "648550508783",
+     appId: "1:648550508783:web:6220982bf050d8e74b531a"
+    };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const messaging = firebase.messaging();
+
+        // Global variables
+        let currentUser = null;
+        let unsubscribeNotifications = null;
+        let lastVisible = null;
+
+        // Initialize the app
+        function initApp() {
+            // Auth state observer
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    // User is signed in
+                    currentUser = user;
+                    showAppUI();
+                    initNotifications();
+                    initPushNotifications();
+                } else {
+                    // User is signed out, redirect to login page
+                    window.location.href = '../pages/login.html';
+                }
+            });
+
+            // Sign out button
+            document.getElementById('sign-out-btn').addEventListener('click', signOut);
+
+            // Mark all as read
+            document.getElementById('mark-all-read').addEventListener('click', markAllAsRead);
+
+            // Load more handler
+            document.getElementById('load-more').addEventListener('click', () => {
+                loadNotifications(true);
+            });
+
+            // Badge click handler
+            document.getElementById('notification-badge').addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        // Sign out function
+        function signOut() {
+            auth.signOut();
+        }
+
+        // Show main app UI
+        function showAppUI() {
+            // Update user info
+            document.getElementById('user-avatar').src = currentUser.photoURL || 'https://www.gravatar.com/avatar?d=mp';
+            document.getElementById('app-container').classList.remove('hidden');
+        }
+
+        // Initialize notifications
+        function initNotifications() {
+            loadNotifications();
+        }
+
+        // Load notifications
+        function loadNotifications(loadMore = false) {
+            if (!currentUser) return;
+            const notificationsRef = db.collection("notifications")
+                .where("userId", "==", currentUser.uid)
+                .orderBy("timestamp", "desc")
+                .limit(10);
+            let query = notificationsRef;
+            if (loadMore && lastVisible) {
+                query = query.startAfter(lastVisible);
+            }
+            unsubscribeNotifications = query.onSnapshot(snapshot => {
+                const notificationList = document.getElementById('notification-list');
+                // Clear loading indicator
+                if (!loadMore) {
+                    notificationList.innerHTML = '';
+                }
+                // Track last visible for pagination
+                if (!snapshot.empty) {
+                    lastVisible = snapshot.docs[snapshot.docs.length - 1];
+                }
+                if (snapshot.empty) {
+                    if (!loadMore) {
+                        notificationList.innerHTML = `
+                            <div class="p-8 text-center text-gray-500">
+                                <i class="far fa-bell text-2xl mb-2"></i>
+                                <p>No notifications yet</p>
+                            </div>
+                        `;
+                    }
+                    document.getElementById('load-more-container').classList.add('hidden');
+                    return;
+                }
+                // Show load more button if we have exactly the limit
+                if (snapshot.docs.length === 10) {
+                    document.getElementById('load-more-container').classList.remove('hidden');
+                } else {
+                    document.getElementById('load-more-container').classList.add('hidden');
+                }
+                snapshot.forEach(doc => {
+                    const notification = doc.data();
+                    const isUnread = !notification.read;
+                    const notificationElement = document.createElement('div');
+                    notificationElement.className = `p-4 hover:bg-gray-50 transition cursor-pointer notification-item ${isUnread ? 'bg-blue-50' : ''}`;
+                    notificationElement.dataset.id = doc.id;
+                    notificationElement.dataset.unread = isUnread;
+                    notificationElement.innerHTML = `
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                <img class="h-10 w-10 rounded-full" src="${notification.senderAvatar || 'https://www.gravatar.com/avatar?d=mp'}" alt="User avatar">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900">
+                                    ${notification.senderName} <span class="text-gray-500 font-normal">${notification.type}</span>
+                                </p>
+                                <p class="text-sm text-gray-500 truncate">${notification.message}</p>
+                                <div class="flex justify-between items-center mt-1">
+                                    <span class="text-xs text-indigo-600">${notification.channel || ''}</span>
+                                    <span class="text-xs text-gray-500">${formatTime(notification.timestamp?.toDate())}</span>
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <span class="h-2 w-2 rounded-full ${isUnread ? 'bg-indigo-600' : 'bg-transparent'} block unread-dot"></span>
+                            </div>
+                        </div>
+                    `;
+                    // Add click handler
+                    notificationElement.addEventListener('click', () => markAsRead(doc.id));
+                    if (loadMore) {
+                        notificationList.appendChild(notificationElement);
+                    } else {
+                        notificationList.prepend(notificationElement);
+                    }
+                });
+                updateUnreadCount();
+            }, error => {
+                console.error("Error loading notifications:", error);
+            });
+        }
+
+        // Mark all as read
+        function markAllAsRead() {
+            if (!currentUser) return;
+            db.collection("notifications")
+                .where("userId", "==", currentUser.uid)
+                .where("read", "==", false)
+                .get()
+                .then(snapshot => {
+                    const batch = db.batch();
+                    snapshot.forEach(doc => {
+                        batch.update(doc.ref, { read: true });
+                    });
+                    return batch.commit();
+                })
+                .then(() => {
+                    console.log("All notifications marked as read");
+                })
+                .catch(error => {
+                    console.error("Error marking all as read:", error);
+                });
+        }
+
+        // Mark single notification as read
+        function markAsRead(notificationId) {
+            db.collection("notifications").doc(notificationId).update({
+                read: true
+            }).catch(error => {
+                console.error("Error marking notification as read:", error);
+            });
+        }
+
+        // Update unread count
+        function updateUnreadCount() {
+            if (!currentUser) return;
+            db.collection("notifications")
+                .where("userId", "==", currentUser.uid)
+                .where("read", "==", false)
+                .get()
+                .then(snapshot => {
+                    const unreadCount = snapshot.size;
+                    document.getElementById('unread-count').textContent = unreadCount;
+                    // Update badge
+                    const badge = document.getElementById('notification-badge');
+                    const badgeCount = document.getElementById('badge-count');
+                    if (unreadCount > 0) {
+                        badge.classList.remove('hidden');
+                        badgeCount.textContent = unreadCount;
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                });
+        }
+
+        // Format timestamp
+        function formatTime(date) {
+            if (!date) return '';
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            if (diffInSeconds < 60) return 'just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+            return date.toLocaleDateString();
+        }
+
+        // Initialize push notifications
+        function initPushNotifications() {
+            if (!('Notification' in window)) {
+                console.log('This browser does not support notifications');
+                return;
+            }
+            // Request permission
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    console.log('Notification permission granted');
+                    getFCMToken();
+                } else {
+                    console.log('Unable to get permission to notify');
+                }
+            });
+            // Handle incoming messages
+            messaging.onMessage((payload) => {
+                console.log('Message received. ', payload);
+                // Show notification
+                const notificationTitle = payload.notification.title;
+                const notificationOptions = {
+                    body: payload.notification.body,
+                    icon: payload.notification.icon || '/icon.png'
+                };
+                new Notification(notificationTitle, notificationOptions);
+                // Update UI
+                updateUnreadCount();
+                document.getElementById('notification-badge').classList.remove('hidden');
+            });
+        }
+
+        // Get FCM token
+        function getFCMToken() {
+            messaging.getToken({ vapidKey: 'YOUR_VAPID_KEY' }).then((currentToken) => {
+                if (currentToken && currentUser) {
+                    // Send the token to your server/database
+                    saveTokenToServer(currentToken, currentUser.uid);
+                } else {
+                    console.log('No registration token available.');
+                }
+            }).catch((err) => {
+                console.log('An error occurred while retrieving token. ', err);
+            });
+        }
+
+        // Save token to server (mock function)
+        function saveTokenToServer(token, userId) {
+            console.log('Saving token to server:', token, 'for user:', userId);
+            // In a real app, you would send this to your backend
+            // Example:
+            // db.collection('users').doc(userId).update({
+            //     fcmToken: token
+            // });
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
