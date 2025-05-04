@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>XupChat – Chat</title>
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'media',
+    };
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     /* Custom styles for chat bubbles */
@@ -34,6 +39,12 @@
       background-color: #f3f4f6;
       color: #111827;
       border-bottom-left-radius: 0.25rem;
+    }
+    @media (prefers-color-scheme: dark) {
+      .received .message-bubble {
+        background-color: #1f2937;
+        color: #f9fafb;
+      }
     }
     .message-time {
       font-size: 0.75rem;
@@ -80,7 +91,7 @@
     }
   </style>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans min-h-screen">
   <div class="flex flex-col h-screen">
     <!-- Top Navbar -->
     <nav class="bg-indigo-600 text-white px-4 py-3 flex items-center shadow-md">
@@ -101,15 +112,15 @@
       </button>
     </nav>
     <!-- Chat Area -->
-    <div id="chatArea" class="flex-1 p-4 overflow-y-auto bg-gray-50">
+    <div id="chatArea" class="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
       <div id="messagesContainer" class="space-y-2">
         <!-- Messages will be dynamically injected here -->
       </div>
     </div>
     <!-- Message Input -->
-    <div class="p-3 bg-white border-t flex items-center">
+    <div class="p-3 bg-white dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 flex items-center">
       <input type="text" id="messageInput" 
-        class="flex-1 p-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-300" 
+        class="flex-1 p-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100" 
         placeholder="Type a message..." 
         autocomplete="off" />
       <button id="sendBtn" class="ml-2 bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-700 transition">
@@ -117,8 +128,10 @@
       </button>
     </div>
   </div>
+
   <!-- SweetAlert for confirmation dialogs -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <!-- Firebase SDK & Chat Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
@@ -136,7 +149,7 @@
       setDoc,
       orderBy 
     } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-    // Firebase Configuration
+
     const firebaseConfig = {
       apiKey: "AIzaSyCsa2c82g1OHNU2HcxCyQLr5RSM7DEDQXM",
       authDomain: "deepvoid-6baf3.firebaseapp.com",
@@ -145,6 +158,7 @@
       messagingSenderId: "648550508783",
       appId: "1:648550508783:web:6220982bf050d8e74b531a"
     };
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -157,17 +171,17 @@
     const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
     const typingIndicator = document.getElementById("typingIndicator");
-    // Format timestamp
+
     function formatTimestamp(timestamp) {
       if (!timestamp) return '';
       const date = timestamp.toDate();
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
-    // Back to chat list
+
     document.getElementById("backBtn").addEventListener("click", () => {
       window.location.href = "../pages/chat-list.html";
     });
-    // Handle logout with confirmation
+
     document.getElementById("logoutBtn").addEventListener("click", async () => {
       const result = await Swal.fire({
         title: 'Log Out?',
@@ -187,7 +201,7 @@
         }
       }
     });
-    // Auth listener
+
     onAuthStateChanged(auth, (user) => {
       if (user) {
         currentUserID = user.uid;
@@ -197,7 +211,7 @@
         window.location.href = "login.html";
       }
     });
-    // Load chat messages
+
     function loadMessages() {
       const messagesRef = collection(db, "chats");
       const chatQuery = query(
@@ -216,7 +230,7 @@
           bubbleDiv.className = "message-bubble";
           if (msg.replyTo) {
             const replyDiv = document.createElement("div");
-            replyDiv.className = `p-2 mb-1 text-xs rounded ${isSent ? 'bg-indigo-500 bg-opacity-30' : 'bg-gray-200'}`;
+            replyDiv.className = `p-2 mb-1 text-xs rounded ${isSent ? 'bg-indigo-500 bg-opacity-30' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-100'}`;
             replyDiv.innerHTML = `<strong>Reply:</strong> ${msg.replyText || "No content"}`;
             bubbleDiv.appendChild(replyDiv);
           }
@@ -236,10 +250,9 @@
           messageDiv.appendChild(bubbleDiv);
           messagesContainer.appendChild(messageDiv);
         });
-        // Scroll to bottom
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
       });
-      // Typing indicator
+
       onSnapshot(doc(db, "typing", roomId), (docSnap) => {
         const typingData = docSnap.data();
         if (typingData?.isTyping && typingData.userId !== currentUserID) {
@@ -249,7 +262,7 @@
         }
       });
     }
-    // Send message on Enter key or button click
+
     function sendMessage() {
       const text = messageInput.value.trim();
       if (!text) return;
@@ -265,27 +278,26 @@
       addDoc(collection(db, "chats"), message);
       messageInput.value = "";
       updateTypingStatus(false);
-      // Scroll to bottom after sending
       setTimeout(() => {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
       }, 100);
-
-      // Trigger notification for recipient
       triggerNotification(message);
     }
+
     sendBtn.addEventListener("click", sendMessage);
     messageInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
         sendMessage();
       }
     });
-    // Typing logic
+
     let typingTimeout;
     messageInput.addEventListener("input", () => {
       updateTypingStatus(true);
       clearTimeout(typingTimeout);
       typingTimeout = setTimeout(() => updateTypingStatus(false), 2000);
     });
+
     async function updateTypingStatus(isTyping) {
       await setDoc(doc(db, "typing", roomId), {
         isTyping,
@@ -293,10 +305,9 @@
       });
     }
 
-    // Trigger notification for recipient
     async function triggerNotification(message) {
       const notificationData = {
-        userId: chatWithUID, // Recipient user ID
+        userId: chatWithUID,
         senderName: auth.currentUser.displayName || "Anonymous",
         senderAvatar: auth.currentUser.photoURL || "https://www.gravatar.com/avatar?d=mp",
         message: message.text,
@@ -316,13 +327,13 @@
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/firebase-messaging-sw.js')
-    .then((registration) => {
-      console.log('Service Worker registered:', registration);
-    })
-    .catch((error) => {
-      console.error('Service Worker registration failed:', error);
-    });
-}
+        .then((registration) => {
+          console.log('Service Worker registered:', registration);
+        })
+        .catch((error) => {
+          console.error('Service Worker registration failed:', error);
+        });
+    }
   </script>
 </body>
 </html>

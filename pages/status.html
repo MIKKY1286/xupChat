@@ -4,21 +4,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>YouChat – Status</title>
+  <script>
+    tailwind.config = {
+      darkMode: 'media'
+    }
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
 </head>
-<body class="bg-gray-100 font-sans min-h-screen">
+<body class="bg-gray-100 dark:bg-gray-900 text-black dark:text-white font-sans min-h-screen">
 
   <div class="flex flex-col h-full">
     <!-- Top Navbar -->
     <nav class="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center shadow-md">
-     <button id="backBtn" class="text-2xl mr-2"><i class='bx bx-chevron-left'></i></button>
+      <button id="backBtn" class="text-2xl mr-2"><i class='bx bx-chevron-left'></i></button>
       <h1 class="text-xl font-bold"><strong>Status</strong></h1>
       <button id="uploadStatusBtn" class="fixed bottom-6 right-6 bg-indigo-600 text-white p-4 rounded-full shadow-lg hover:bg-indigo-700">+</button>
     </nav>
 
     <!-- Status Area -->
-    <div id="statusContainer" class="flex-1 p-4 overflow-x-auto bg-white shadow-md">
+    <div id="statusContainer" class="flex-1 p-4 overflow-x-auto bg-white dark:bg-gray-800 shadow-md">
       <!-- Statuses will be dynamically loaded here -->
       <div id="statusRow" class="flex space-x-4">
         <!-- Status circles will be added here -->
@@ -50,10 +55,10 @@
 
     <!-- Text Status Upload Modal -->
     <div id="textStatusModal" class="hidden fixed top-0 left-0 w-full h-full bg-black bg-opacity-70 flex justify-center items-center">
-      <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-96 relative">
         <button id="closeTextStatusModal" class="absolute top-2 right-2 text-xl text-red-600">X</button>
         <h2 class="text-xl font-bold mb-4">Upload Text Status</h2>
-        <textarea id="statusInput" class="w-full h-32 p-2 border border-gray-300 rounded-md resize-none" placeholder="Type your status..."></textarea>
+        <textarea id="statusInput" class="w-full h-32 p-2 border border-gray-300 rounded-md resize-none bg-white dark:bg-gray-700 dark:text-white" placeholder="Type your status..."></textarea>
         <button id="submitTextStatus" class="mt-4 w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700">Submit</button>
       </div>
     </div>
@@ -98,20 +103,19 @@
     const storage = getStorage(app);
 
     let currentUserID = null;
-    let currentUsername = "Guest"; // Default username for unauthenticated users
+    let currentUsername = "Guest";
 
-    // Check Authentication State
     onAuthStateChanged(auth, (user) => {
       if (user) {
         currentUserID = user.uid;
-        currentUsername = user.displayName || "User"; // Use displayName if available
+        currentUsername = user.displayName || "User";
         document.getElementById("backBtn").addEventListener("click", () => {
-          window.location.href = "../pages/chat-list.html"; // Redirect to chat list or home
+          window.location.href = "../pages/chat-list.html";
         });
         loadStatuses();
       } else {
         alert("You must be logged in to view statuses.");
-        window.location.href = "../pages/login.html"; // Redirect to login page
+        window.location.href = "../pages/login.html";
       }
     });
 
@@ -121,31 +125,27 @@
     const modalText = document.getElementById("modalText");
     const modalUsername = document.getElementById("modalUsername");
 
-    // Load and Display Statuses
     async function loadStatuses() {
       const statusQuery = query(
         collection(db, "statuses"),
         where("timestamp", ">=", new Date(Date.now() - 24 * 60 * 60 * 1000))
       );
       onSnapshot(statusQuery, async (snapshot) => {
-        statusRow.innerHTML = ""; // Clear existing statuses
-
+        statusRow.innerHTML = "";
         const userStatusMap = {};
 
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
           const userId = data.userId;
-
           if (!userStatusMap[userId]) {
             userStatusMap[userId] = [];
           }
-
           userStatusMap[userId].push({ id: docSnap.id, ...data });
         });
 
         for (const userId in userStatusMap) {
           const userSnap = await getDoc(doc(db, "users", userId));
-          const username = userSnap.exists() ? userSnap.data().username : "User"; // Fallback to "User"
+          const username = userSnap.exists() ? userSnap.data().username : "User";
           const latestStatus = userStatusMap[userId].sort(
             (a, b) => b.timestamp.toDate() - a.timestamp.toDate()
           )[0];
@@ -154,21 +154,17 @@
           statusDiv.className = "flex flex-col items-center space-y-2 shrink-0";
 
           if (latestStatus.type === "image") {
-            // Image Status
-            getDownloadURL(storageRef(storage, latestStatus.mediaPath)).then(
-              (url) => {
-                statusDiv.innerHTML = `
-                  <div class="w-24 h-24 rounded-full border-4 border-indigo-500 overflow-hidden">
-                    <img src="${url}" alt="status" class="w-full h-full object-cover"/>
-                  </div>
-                  <p class="text-sm text-center">${username}</p>
-                `;
-              }
-            );
+            getDownloadURL(storageRef(storage, latestStatus.mediaPath)).then((url) => {
+              statusDiv.innerHTML = `
+                <div class="w-24 h-24 rounded-full border-4 border-indigo-500 overflow-hidden">
+                  <img src="${url}" alt="status" class="w-full h-full object-cover"/>
+                </div>
+                <p class="text-sm text-center">${username}</p>
+              `;
+            });
           } else if (latestStatus.type === "text") {
-            // Text Status
             statusDiv.innerHTML = `
-              <div class="w-24 h-24 rounded-full border-4 border-indigo-500 overflow-hidden bg-gray-200 flex items-center justify-center">
+              <div class="w-24 h-24 rounded-full border-4 border-indigo-500 overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                 <p class="text-lg font-medium">${latestStatus.content.slice(0, 1).toUpperCase()}</p>
               </div>
               <p class="text-sm text-center">${username}</p>
@@ -181,7 +177,6 @@
       });
     }
 
-    // Open and Display All Statuses for a User
     let currentStoryIndex = 0;
     let storyList = [];
 
@@ -195,13 +190,9 @@
       const story = storyList[currentStoryIndex];
       if (!story) return;
 
-      // Update Username
       modalUsername.textContent = username;
-
-      // Show Modal
       storyModal.classList.remove("hidden");
 
-      // Reset Progress Bars
       const progressBarsDiv = document.getElementById("progressBars");
       progressBarsDiv.innerHTML = "";
       storyList.forEach(() => {
@@ -213,7 +204,6 @@
         progressBarsDiv.appendChild(progressBar);
       });
 
-      // Show Current Story
       const progressBars = Array.from(progressBarsDiv.children);
       progressBars.forEach((bar, index) => {
         bar.children[0].style.width = "0%";
@@ -235,12 +225,10 @@
         modalText.textContent = story.content;
       }
 
-      // Mark as Viewed
       updateDoc(doc(db, "statuses", story.id), {
         [`views.${currentUserID}`]: true,
       });
 
-      // Auto-Navigate to Next Story
       clearTimeout(window.storyTimeout);
       window.storyTimeout = setTimeout(() => {
         currentStoryIndex++;
@@ -251,26 +239,23 @@
         }
       }, 5000);
 
-      // Add Reaction Buttons Dynamically
       const reactionsDiv = document.getElementById("reactionsDiv");
-      reactionsDiv.innerHTML = ""; // Clear existing buttons
+      reactionsDiv.innerHTML = "";
       const emojis = ["❤️", "😂", "😮", "😢"];
       emojis.forEach((emoji) => {
         const button = document.createElement("button");
         button.textContent = emoji;
         button.className = "text-white text-2xl";
-        button.addEventListener("click", () => react(emoji)); // Attach event listener
+        button.addEventListener("click", () => react(emoji));
         reactionsDiv.appendChild(button);
       });
     }
 
-    // Close Modal
     document.getElementById("closeModal").onclick = () => {
       storyModal.classList.add("hidden");
       clearTimeout(window.storyTimeout);
     };
 
-    // Add Reactions
     function react(emoji) {
       const story = storyList[currentStoryIndex];
       updateDoc(doc(db, "statuses", story.id), {
@@ -278,7 +263,6 @@
       });
     }
 
-    // Upload New Text Status
     document.getElementById("uploadStatusBtn").addEventListener("click", () => {
       document.getElementById("textStatusModal").classList.remove("hidden");
     });
@@ -313,3 +297,4 @@
   </script>
 </body>
 </html>
+  
