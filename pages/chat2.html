@@ -149,6 +149,9 @@
       setDoc,
       orderBy 
     } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+    import { getMessaging } from 'firebase/messaging';
+    import { onMessage } from 'firebase/messaging';
+
 
     const firebaseConfig = {
       apiKey: "AIzaSyCsa2c82g1OHNU2HcxCyQLr5RSM7DEDQXM",
@@ -162,6 +165,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const messaging = getMessaging(app);
     const chatWithUID = localStorage.getItem("chatWithUID");
     const chatWithName = localStorage.getItem("chatWithName");
     let currentUserID = null;
@@ -334,6 +338,13 @@
           console.error('Service Worker registration failed:', error);
         });
     }
+
+    onMessage(messaging, payload => {
+  console.log('Foreground message:', payload);
+  // Show custom UI/notification here
+});
+
+    export { messaging };
   </script>
 </body>
 </html>

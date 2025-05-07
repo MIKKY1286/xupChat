@@ -57,6 +57,10 @@
     </div>
   </div>
   <script>
+   import { getMessaging } from 'firebase/messaging';
+   import { onMessage } from 'firebase/messaging';
+
+
     // Firebase configuration (replace with your actual config)
     const firebaseConfig = {
       apiKey: "AIzaSyCsa2c82g1OHNU2HcxCyQLr5RSM7DEDQXM",
@@ -340,8 +344,14 @@
       });
     }
 
+    onMessage(messaging, payload => {
+  console.log('Foreground message:', payload);
+  // Show custom UI/notification here
+});
+
     // Initialize the app when DOM is loaded
     document.addEventListener('DOMContentLoaded', initApp);
+    export { messaging };
   </script>
 </body>
 </html>
