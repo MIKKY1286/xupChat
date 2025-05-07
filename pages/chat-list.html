@@ -63,10 +63,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-    import { getMessaging } from 'firebase/messaging';
-    import { onMessage } from 'firebase/messaging';
-
-
+    import { getMessaging, onMessage } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-messaging.js";
 
     // Firebase config
     const firebaseConfig = {
@@ -78,13 +75,13 @@
       appId: "1:648550508783:web:6220982bf050d8e74b531a"
     };
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const messaging = getMessaging(app);
 
-
-
+    // DOM Elements
     const chatListEl = document.getElementById("chatList");
     const newChatModal = document.getElementById("newChatModal");
     const closeModalBtn = document.getElementById("closeModal");
@@ -93,6 +90,7 @@
 
     let currentUserID = null;
 
+    // Auth state listener
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
         window.location.href = "../pages/login.html";
@@ -127,11 +125,11 @@
 
         users.forEach(user => {
           const div = document.createElement("div");
-          div.className = "py-3 flex justify-between items-center  cursor-pointer";
+          div.className = "py-3 flex justify-between items-center cursor-pointer";
           div.innerHTML = `
             <div>
-             <p class="font-semibold text-gray-800 dark:text-white">${user.name}</p>
-             <p class="text-sm text-gray-500 dark:text-gray-300">${user.email}</p>
+              <p class="font-semibold text-gray-800 dark:text-white">${user.name}</p>
+              <p class="text-sm text-gray-500 dark:text-gray-300">${user.email}</p>
             </div>
             <button class="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600"
               onclick="startChat('${user.uid}', '${user.name}')">Chat</button>
@@ -145,13 +143,13 @@
     }
 
     // Start a new chat
-    window.startChat = function (uid, name) {
+    window.startChat = function(uid, name) {
       localStorage.setItem("chatWithUID", uid);
       localStorage.setItem("chatWithName", name);
       window.location.href = "../pages/chat2.html";
     };
 
-    // Sidebar
+    // Sidebar toggle
     document.getElementById("sidebarToggle").addEventListener("click", () => {
       document.getElementById("sidebar").classList.remove("-translate-x-full");
     });
@@ -160,13 +158,13 @@
       document.getElementById("sidebar").classList.add("-translate-x-full");
     });
 
-    // Logout
+    // Logout handler
     document.getElementById("logoutBtn").addEventListener("click", async () => {
       await signOut(auth);
       window.location.href = "login.html";
     });
 
-    // Open New Chat Modal
+    // Open new chat modal
     document.getElementById("newChatBtn").addEventListener("click", () => {
       newChatModal.classList.remove("hidden");
       searchInput.value = "";
@@ -174,7 +172,7 @@
       searchInput.focus();
     });
 
-    // Close Modal
+    // Close modal
     closeModalBtn.addEventListener("click", () => {
       newChatModal.classList.add("hidden");
       searchInput.blur();
@@ -194,7 +192,7 @@
 
         if (match) {
           const div = document.createElement("div");
-          div.className = "p-3 border rounded  flex justify-between items-center";
+          div.className = "p-3 border rounded flex justify-between items-center";
           div.innerHTML = `
             <div>
               <p class="font-semibold dark:text-white">${data.name}</p>
@@ -211,10 +209,11 @@
       }
     });
 
+    // Handle foreground messages
     onMessage(messaging, payload => {
-  console.log('Foreground message:', payload);
-  // Show custom UI/notification here
-});
+      console.log('Foreground message:', payload);
+      // You can add custom UI/notification logic here
+    });
 
     export { messaging };
   </script>

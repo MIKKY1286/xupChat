@@ -57,10 +57,6 @@
     </div>
   </div>
   <script>
-   import { getMessaging } from 'firebase/messaging';
-   import { onMessage } from 'firebase/messaging';
-
-
     // Firebase configuration (replace with your actual config)
     const firebaseConfig = {
       apiKey: "AIzaSyCsa2c82g1OHNU2HcxCyQLr5RSM7DEDQXM",
@@ -70,16 +66,18 @@
       messagingSenderId: "648550508783",
       appId: "1:648550508783:web:6220982bf050d8e74b531a"
     };
+  
     // Initialize Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
     const messaging = firebase.messaging();
+  
     // Global variables
     let currentUser = null;
     let unsubscribeNotifications = null;
     let lastVisible = null;
-
+  
     // Initialize the app
     function initApp() {
       // Auth state observer
@@ -95,62 +93,68 @@
           window.location.href = '../pages/login.html';
         }
       });
-
+  
       // Sign out button
       document.getElementById('sign-out-btn').addEventListener('click', signOut);
-
+  
       // Mark all as read
       document.getElementById('mark-all-read').addEventListener('click', markAllAsRead);
-
+  
       // Load more handler
       document.getElementById('load-more').addEventListener('click', () => {
         loadNotifications(true);
       });
-
+  
       // Badge click handler
       document.getElementById('notification-badge').addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     }
-
+  
     // Sign out function
     function signOut() {
       auth.signOut();
     }
-
+  
     // Show main app UI
     function showAppUI() {
       // Update user info
       document.getElementById('user-avatar').src = currentUser.photoURL || 'https://www.gravatar.com/avatar?d=mp';
       document.getElementById('app-container').classList.remove('hidden');
     }
-
+  
     // Initialize notifications
     function initNotifications() {
       loadNotifications();
     }
-
+  
     // Load notifications
     function loadNotifications(loadMore = false) {
       if (!currentUser) return;
+  
       const notificationsRef = db.collection("notifications")
         .where("userId", "==", currentUser.uid)
         .orderBy("timestamp", "desc")
         .limit(10);
+  
       let query = notificationsRef;
       if (loadMore && lastVisible) {
         query = query.startAfter(lastVisible);
       }
+  
       unsubscribeNotifications = query.onSnapshot(snapshot => {
         const notificationList = document.getElementById('notification-list');
+  
         // Clear loading indicator
         if (!loadMore) {
           notificationList.innerHTML = '';
         }
+  
         // Track last visible for pagination
         if (!snapshot.empty) {
           lastVisible = snapshot.docs[snapshot.docs.length - 1];
         }
+  
         if (snapshot.empty) {
           if (!loadMore) {
             notificationList.innerHTML = `
@@ -163,12 +167,14 @@
           document.getElementById('load-more-container').classList.add('hidden');
           return;
         }
+  
         // Show load more button if we have exactly the limit
         if (snapshot.docs.length === 10) {
           document.getElementById('load-more-container').classList.remove('hidden');
         } else {
           document.getElementById('load-more-container').classList.add('hidden');
         }
+  
         snapshot.forEach(doc => {
           const notification = doc.data();
           const isUnread = !notification.read;
@@ -196,20 +202,23 @@
               </div>
             </div>
           `;
+  
           // Add click handler
           notificationElement.addEventListener('click', () => markAsRead(doc.id));
+  
           if (loadMore) {
             notificationList.appendChild(notificationElement);
           } else {
             notificationList.prepend(notificationElement);
           }
         });
+  
         updateUnreadCount();
       }, error => {
         console.error("Error loading notifications:", error);
       });
     }
-
+  
     // Mark all as read
     function markAllAsRead() {
       if (!currentUser) return;
@@ -226,8 +235,6 @@
         })
         .then(() => {
           console.log("All notifications marked as read");
-
-          // Clear the notification list in the UI
           const notificationList = document.getElementById('notification-list');
           notificationList.innerHTML = `
             <div class="p-8 text-center text-gray-500">
@@ -235,18 +242,14 @@
               <p>No notifications yet</p>
             </div>
           `;
-
-          // Hide the "Load More" button
           document.getElementById('load-more-container').classList.add('hidden');
-
-          // Update the unread count badge
           updateUnreadCount();
         })
         .catch(error => {
           console.error("Error marking all as read:", error);
         });
     }
-
+  
     // Mark single notification as read
     function markAsRead(notificationId) {
       db.collection("notifications").doc(notificationId).update({
@@ -255,7 +258,7 @@
         console.error("Error marking notification as read:", error);
       });
     }
-
+  
     // Update unread count
     function updateUnreadCount() {
       if (!currentUser) return;
@@ -266,6 +269,7 @@
         .then(snapshot => {
           const unreadCount = snapshot.size;
           document.getElementById('unread-count').textContent = unreadCount;
+  
           // Update badge
           const badge = document.getElementById('notification-badge');
           const badgeCount = document.getElementById('badge-count');
@@ -277,7 +281,7 @@
           }
         });
     }
-
+  
     // Format timestamp
     function formatTime(date) {
       if (!date) return '';
@@ -288,13 +292,14 @@
       if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
       return date.toLocaleDateString();
     }
-
+  
     // Initialize push notifications
     function initPushNotifications() {
       if (!('Notification' in window)) {
         console.log('This browser does not support notifications');
         return;
       }
+  
       // Request permission
       Notification.requestPermission().then(permission => {
         if (permission === 'granted') {
@@ -304,15 +309,15 @@
           console.log('Unable to get permission to notify');
         }
       });
-
+  
       // Handle incoming messages
       messaging.onMessage(payload => {
-        console.log('Message received. ', payload);
+        console.log('Message received.', payload);
         // Show notification
         const notificationTitle = payload.notification.title;
         const notificationOptions = {
           body: payload.notification.body,
-          icon: payload.notification.icon || '/icon.png'
+          icon: payload.notification.icon || '../images/youchat-logo.png'
         };
         new Notification(notificationTitle, notificationOptions);
         // Update UI
@@ -320,17 +325,15 @@
         document.getElementById('notification-badge').classList.remove('hidden');
       });
     }
-
+  
     // Get FCM token and save it to Firestore
     function getFCMToken() {
       messaging.getToken({ vapidKey: 'BJMvvk8ACDZsHb6q7TSuZG2L_cFlqDIMIBxPCHEo1hBSTCxpBfDeTnvc-88pt08tz3s5QW5PlhX8eg28wcysGso' }).then(currentToken => {
         if (currentToken && currentUser) {
           console.log('Saving token to Firestore:', currentToken, 'for user:', currentUser.uid);
-
-          // Save token to Firestore under the user's document
           db.collection('users').doc(currentUser.uid).set(
             { fcmToken: currentToken },
-            { merge: true } // Use merge to avoid overwriting other fields
+            { merge: true }
           ).then(() => {
             console.log('FCM token saved to Firestore successfully.');
           }).catch(error => {
@@ -343,15 +346,15 @@
         console.error('An error occurred while retrieving token:', err);
       });
     }
-
-    onMessage(messaging, payload => {
-  console.log('Foreground message:', payload);
-  // Show custom UI/notification here
-});
-
+  
+    // Handle foreground messages
+    messaging.onMessage = function(payload) {
+      console.log('Foreground message:', payload);
+      // You can add custom UI here if needed
+    };
+  
     // Initialize the app when DOM is loaded
     document.addEventListener('DOMContentLoaded', initApp);
-    export { messaging };
   </script>
 </body>
 </html>

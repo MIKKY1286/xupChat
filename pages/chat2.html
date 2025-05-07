@@ -1,158 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>XupChat – Chat</title>
-  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>XupChat - Chat List</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <script>
     tailwind.config = {
-      darkMode: 'media',
-    };
+      darkMode: 'media', // Enables dark mode via system settings
+    }
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Custom styles for chat bubbles */
-    .message-container {
-      display: flex;
-      margin-bottom: 1rem;
-    }
-    .message-container.sent {
-      justify-content: flex-end;
-    }
-    .message-container.received {
-      justify-content: flex-start;
-    }
-    .message-bubble {
-      max-width: 70%;
-      padding: 0.75rem 1rem;
-      border-radius: 1rem;
-      position: relative;
-      word-wrap: break-word;
-    }
-    .sent .message-bubble {
-      background-color: #6366f1;
-      color: white;
-      border-bottom-right-radius: 0.25rem;
-    }
-    .received .message-bubble {
-      background-color: #f3f4f6;
-      color: #111827;
-      border-bottom-left-radius: 0.25rem;
-    }
-    @media (prefers-color-scheme: dark) {
-      .received .message-bubble {
-        background-color: #1f2937;
-        color: #f9fafb;
-      }
-    }
-    .message-time {
-      font-size: 0.75rem;
-      opacity: 0.8;
-      margin-top: 0.25rem;
-      text-align: right;
-    }
-    .message-status {
-      position: absolute;
-      right: -1.5rem;
-      bottom: 0;
-    }
-    /* Smooth scrolling */
-    #chatArea {
-      scroll-behavior: smooth;
-    }
-    /* Typing indicator animation */
-    .typing-dots {
-      display: inline-flex;
-      align-items: center;
-    }
-    .typing-dots span {
-      height: 8px;
-      width: 8px;
-      margin: 0 2px;
-      background-color: #6b7280;
-      border-radius: 50%;
-      display: inline-block;
-      animation: typing 1s infinite ease-in-out;
-    }
-    .typing-dots span:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-    .typing-dots span:nth-child(3) {
-      animation-delay: 0.4s;
-    }
-    @keyframes typing {
-      0%, 100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-5px);
-      }
-    }
-  </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans min-h-screen">
-  <div class="flex flex-col h-screen">
-    <!-- Top Navbar -->
-    <nav class="bg-indigo-600 text-white px-4 py-3 flex items-center shadow-md">
-      <button id="backBtn" class="text-2xl mr-2"><i class='bx bx-chevron-left'></i></button>
-      <div class="flex-1">
-        <h1 id="chatUserName" class="text-lg font-bold truncate">Loading...</h1>
-        <div id="typingIndicator" class="text-xs hidden">
-          <span class="typing-dots">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-          <span id="typingText">typing</span>
-        </div>
-      </div>
-      <button id="logoutBtn" class="text-xl p-2 rounded-full hover:bg-indigo-700 transition">
-        <i class='bx bx-log-out'></i>
-      </button>
-    </nav>
-    <!-- Chat Area -->
-    <div id="chatArea" class="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
-      <div id="messagesContainer" class="space-y-2">
-        <!-- Messages will be dynamically injected here -->
-      </div>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans min-h-screen overflow-x-hidden">
+
+  <!-- Sidebar -->
+  <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg transform -translate-x-full transition-transform duration-300 z-50">
+    <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+      <h2 class="text-lg font-semibold">Menu</h2>
+      <button id="closeSidebar" class="text-xl">✖️</button>
     </div>
-    <!-- Message Input -->
-    <div class="p-3 bg-white dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 flex items-center">
-      <input type="text" id="messageInput" 
-        class="flex-1 p-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100" 
-        placeholder="Type a message..." 
-        autocomplete="off" />
-      <button id="sendBtn" class="ml-2 bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-700 transition">
-        <i class='bx bx-send text-xl'></i>
-      </button>
-    </div>
+    <ul class="p-4 space-y-2">
+      <li><a href="../pages/profile.html" class="block p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">Profile</a></li>
+      <li><a href="../pages/status.html" class="block p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">Status</a></li>
+      <li><a href="../pages/channel.html" class="block p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">Channel</a></li>
+      <li><a href="../pages/notification.html" class="block p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">Notification</a></li>
+      <li><a href="../pages/settings.html" class="block p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">Settings</a></li>
+      <li><button id="logoutBtn" class="w-full text-left p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600">Log Out</button></li>
+    </ul>
   </div>
 
-  <!-- SweetAlert for confirmation dialogs -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Top Navbar -->
+  <nav class="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center shadow-md">
+    <h1 id="sidebarToggle" class="text-xl font-bold cursor-pointer">XupChat</h1>
+    <button id="newChatBtn" class="bg-white text-indigo-600 font-medium px-4 py-2 rounded hover:bg-indigo-100 transition">New Chat <i class='bx bx-user-plus'></i></button>
+  </nav>
 
-  <!-- Firebase SDK & Chat Script -->
+  <!-- Main -->
+  <main class="p-6">
+    <div class="max-w-2xl mx-auto">
+      <h2 class="text-2xl font-semibold mb-4">Chats</h2>
+      <div id="chatList" class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 divide-y divide-gray-200 dark:divide-gray-700">
+        <!-- Chat list will render here -->
+      </div>
+    </div>
+
+    <!-- New Chat Modal -->
+    <div id="newChatModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md shadow-xl">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold">Start New Chat</h2>
+          <button id="closeModal" class="text-xl">✖️</button>
+        </div>
+        <input type="text" id="searchInput" placeholder="Search by name or email..." class="w-full p-2 border rounded mb-4 focus:outline-none focus:ring dark:bg-gray-700 dark:text-white dark:border-gray-600" />
+        <div id="searchResults" class="space-y-3 max-h-60 overflow-y-auto"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Firebase Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-    import { 
-      getFirestore, 
-      collection, 
-      addDoc, 
-      query, 
-      where, 
-      onSnapshot, 
-      serverTimestamp, 
-      updateDoc, 
-      doc, 
-      setDoc,
-      orderBy 
-    } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-    import { getMessaging } from 'firebase/messaging';
-    import { onMessage } from 'firebase/messaging';
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+    import { getMessaging, onMessage } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-messaging.js";
 
-
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyCsa2c82g1OHNU2HcxCyQLr5RSM7DEDQXM",
       authDomain: "deepvoid-6baf3.firebaseapp.com",
@@ -162,187 +75,145 @@
       appId: "1:648550508783:web:6220982bf050d8e74b531a"
     };
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const messaging = getMessaging(app);
-    const chatWithUID = localStorage.getItem("chatWithUID");
-    const chatWithName = localStorage.getItem("chatWithName");
+
+    // DOM Elements
+    const chatListEl = document.getElementById("chatList");
+    const newChatModal = document.getElementById("newChatModal");
+    const closeModalBtn = document.getElementById("closeModal");
+    const searchInput = document.getElementById("searchInput");
+    const searchResults = document.getElementById("searchResults");
+
     let currentUserID = null;
-    const roomId = [chatWithUID, auth.currentUser?.uid].sort().join("_");
-    const chatUserName = document.getElementById("chatUserName");
-    const messagesContainer = document.getElementById("messagesContainer");
-    const messageInput = document.getElementById("messageInput");
-    const sendBtn = document.getElementById("sendBtn");
-    const typingIndicator = document.getElementById("typingIndicator");
 
-    function formatTimestamp(timestamp) {
-      if (!timestamp) return '';
-      const date = timestamp.toDate();
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-
-    document.getElementById("backBtn").addEventListener("click", () => {
-      window.location.href = "../pages/chat-list.html";
-    });
-
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-      const result = await Swal.fire({
-        title: 'Log Out?',
-        text: 'Are you sure you want to log out?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#6366f1',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Yes, log out'
-      });
-      if (result.isConfirmed) {
-        try {
-          await signOut(auth);
-          window.location.href = "login.html";
-        } catch (error) {
-          Swal.fire('Error', 'Failed to log out. Please try again.', 'error');
-        }
-      }
-    });
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        currentUserID = user.uid;
-        chatUserName.innerText = chatWithName || "Chat";
-        loadMessages();
+    // Auth state listener
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "../pages/login.html";
       } else {
-        window.location.href = "login.html";
+        currentUserID = user.uid;
+        loadChatList(user.uid);
       }
     });
 
-    function loadMessages() {
-      const messagesRef = collection(db, "chats");
-      const chatQuery = query(
-        messagesRef, 
-        where("roomId", "==", [currentUserID, chatWithUID].sort().join("_")),
-        orderBy("timestamp", "asc")
-      );
-      onSnapshot(chatQuery, (snapshot) => {
-        messagesContainer.innerHTML = "";
-        snapshot.forEach((docSnap) => {
-          const msg = docSnap.data();
-          const isSent = msg.sender === currentUserID;
-          const messageDiv = document.createElement("div");
-          messageDiv.className = `message-container ${isSent ? 'sent' : 'received'}`;
-          const bubbleDiv = document.createElement("div");
-          bubbleDiv.className = "message-bubble";
-          if (msg.replyTo) {
-            const replyDiv = document.createElement("div");
-            replyDiv.className = `p-2 mb-1 text-xs rounded ${isSent ? 'bg-indigo-500 bg-opacity-30' : 'bg-gray-200 dark:bg-gray-700 dark:text-gray-100'}`;
-            replyDiv.innerHTML = `<strong>Reply:</strong> ${msg.replyText || "No content"}`;
-            bubbleDiv.appendChild(replyDiv);
-          }
-          const textDiv = document.createElement("div");
-          textDiv.textContent = msg.text;
-          bubbleDiv.appendChild(textDiv);
-          const timeDiv = document.createElement("div");
-          timeDiv.className = "message-time";
-          timeDiv.textContent = formatTimestamp(msg.timestamp);
-          bubbleDiv.appendChild(timeDiv);
-          if (isSent) {
-            const statusDiv = document.createElement("div");
-            statusDiv.className = "message-status";
-            statusDiv.innerHTML = '<i class="bx bx-check text-xs"></i>';
-            bubbleDiv.appendChild(statusDiv);
-          }
-          messageDiv.appendChild(bubbleDiv);
-          messagesContainer.appendChild(messageDiv);
-        });
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      });
-
-      onSnapshot(doc(db, "typing", roomId), (docSnap) => {
-        const typingData = docSnap.data();
-        if (typingData?.isTyping && typingData.userId !== currentUserID) {
-          typingIndicator.classList.remove("hidden");
-        } else {
-          typingIndicator.classList.add("hidden");
-        }
-      });
-    }
-
-    function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text) return;
-      const message = {
-        sender: currentUserID,
-        receiver: chatWithUID,
-        text,
-        roomId: [currentUserID, chatWithUID].sort().join("_"),
-        timestamp: serverTimestamp(),
-        replyTo: null,
-        replyText: null
-      };
-      addDoc(collection(db, "chats"), message);
-      messageInput.value = "";
-      updateTypingStatus(false);
-      setTimeout(() => {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      }, 100);
-      triggerNotification(message);
-    }
-
-    sendBtn.addEventListener("click", sendMessage);
-    messageInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        sendMessage();
-      }
-    });
-
-    let typingTimeout;
-    messageInput.addEventListener("input", () => {
-      updateTypingStatus(true);
-      clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(() => updateTypingStatus(false), 2000);
-    });
-
-    async function updateTypingStatus(isTyping) {
-      await setDoc(doc(db, "typing", roomId), {
-        isTyping,
-        userId: currentUserID
-      });
-    }
-
-    async function triggerNotification(message) {
-      const notificationData = {
-        userId: chatWithUID,
-        senderName: auth.currentUser.displayName || "Anonymous",
-        senderAvatar: auth.currentUser.photoURL || "https://www.gravatar.com/avatar?d=mp",
-        message: message.text,
-        type: "chat_message",
-        channel: "Private Chat",
-        timestamp: serverTimestamp(),
-        read: false
-      };
+    // Load chat list
+    async function loadChatList(currentUserId) {
+      chatListEl.innerHTML = `<p class="text-gray-500 text-center flex items-center justify-center gap-2">
+        <svg class="animate-spin h-6 w-6 text-indigo-500" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        Loading chats...
+      </p>`;
 
       try {
-        await addDoc(collection(db, "notifications"), notificationData);
-        console.log("Notification triggered successfully.");
-      } catch (error) {
-        console.error("Error triggering notification:", error);
+        const snapshot = await getDocs(collection(db, "users"));
+        const users = [];
+
+        snapshot.forEach(doc => {
+          const userData = doc.data();
+          if (userData.uid !== currentUserId) users.push(userData);
+        });
+
+        chatListEl.innerHTML = users.length
+          ? ""
+          : `<p class="text-gray-500 text-center">No other users found.</p>`;
+
+        users.forEach(user => {
+          const div = document.createElement("div");
+          div.className = "py-3 flex justify-between items-center cursor-pointer";
+          div.innerHTML = `
+            <div>
+              <p class="font-semibold text-gray-800 dark:text-white">${user.name}</p>
+              <p class="text-sm text-gray-500 dark:text-gray-300">${user.email}</p>
+            </div>
+            <button class="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600"
+              onclick="startChat('${user.uid}', '${user.name}')">Chat</button>
+          `;
+          chatListEl.appendChild(div);
+        });
+      } catch (err) {
+        chatListEl.innerHTML = `<p class="text-red-500 text-center">Error loading chats.</p>`;
+        console.error("Failed to load users:", err.message);
       }
     }
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('../firebase-messaging-sw.js')
-        .then((registration) => {
-          console.log('Service Worker registered:', registration);
-        })
-        .catch((error) => {
-          console.error('Service Worker registration failed:', error);
-        });
-    }
+    // Start a new chat
+    window.startChat = function(uid, name) {
+      localStorage.setItem("chatWithUID", uid);
+      localStorage.setItem("chatWithName", name);
+      window.location.href = "../pages/chat2.html";
+    };
 
+    // Sidebar toggle
+    document.getElementById("sidebarToggle").addEventListener("click", () => {
+      document.getElementById("sidebar").classList.remove("-translate-x-full");
+    });
+
+    document.getElementById("closeSidebar").addEventListener("click", () => {
+      document.getElementById("sidebar").classList.add("-translate-x-full");
+    });
+
+    // Logout handler
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await signOut(auth);
+      window.location.href = "../index.html";
+    });
+
+    // Open new chat modal
+    document.getElementById("newChatBtn").addEventListener("click", () => {
+      newChatModal.classList.remove("hidden");
+      searchInput.value = "";
+      searchResults.innerHTML = "";
+      searchInput.focus();
+    });
+
+    // Close modal
+    closeModalBtn.addEventListener("click", () => {
+      newChatModal.classList.add("hidden");
+      searchInput.blur();
+    });
+
+    // Search users
+    searchInput.addEventListener("input", async (e) => {
+      const keyword = e.target.value.trim().toLowerCase();
+      searchResults.innerHTML = "";
+
+      if (!keyword) return;
+
+      const snapshot = await getDocs(collection(db, "users"));
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const match = (data.name?.toLowerCase().includes(keyword) || data.email?.toLowerCase().includes(keyword)) && data.uid !== currentUserID;
+
+        if (match) {
+          const div = document.createElement("div");
+          div.className = "p-3 border rounded flex justify-between items-center";
+          div.innerHTML = `
+            <div>
+              <p class="font-semibold dark:text-white">${data.name}</p>
+              <p class="text-sm text-gray-500 dark:text-gray-300">${data.email}</p>
+            </div>
+            <button class="bg-indigo-500 text-white px-3 py-1 rounded" onclick="startChat('${data.uid}', '${data.name}')">Chat</button>
+          `;
+          searchResults.appendChild(div);
+        }
+      });
+
+      if (searchResults.innerHTML === "") {
+        searchResults.innerHTML = `<p class="text-gray-500 text-sm text-center">No users found.</p>`;
+      }
+    });
+
+    // Handle foreground messages
     onMessage(messaging, payload => {
-  console.log('Foreground message:', payload);
-  // Show custom UI/notification here
-});
+      console.log('Foreground message:', payload);
+      // You can add custom UI/notification logic here
+    });
 
     export { messaging };
   </script>
