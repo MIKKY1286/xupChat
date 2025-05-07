@@ -319,7 +319,7 @@
 
     // Get FCM token and save it to Firestore
     function getFCMToken() {
-      messaging.getToken({ vapidKey: 'YOUR_VAPID_KEY' }).then(currentToken => {
+      messaging.getToken({ vapidKey: 'BJMvvk8ACDZsHb6q7TSuZG2L_cFlqDIMIBxPCHEo1hBSTCxpBfDeTnvc-88pt08tz3s5QW5PlhX8eg28wcysGso' }).then(currentToken => {
         if (currentToken && currentUser) {
           console.log('Saving token to Firestore:', currentToken, 'for user:', currentUser.uid);
 
