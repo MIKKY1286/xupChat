@@ -348,10 +348,20 @@
     }
   
     // Handle foreground messages
-    messaging.onMessage = function(payload) {
-      console.log('Foreground message:', payload);
-      // You can add custom UI here if needed
-    };
+    onMessage(messaging, payload => {
+  console.log('Foreground message:', payload);
+
+  const title = payload.notification?.title || 'New Message';
+  const options = {
+    body: payload.notification?.body || 'You have a new message.',
+    icon: payload.notification?.icon || '/icon.png'
+  };
+
+  // Show notification only if permission is granted
+  if (Notification.permission === 'granted') {
+    new Notification(title, options);
+  }
+});
   
     // Initialize the app when DOM is loaded
     document.addEventListener('DOMContentLoaded', initApp);

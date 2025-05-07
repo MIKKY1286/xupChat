@@ -146,7 +146,7 @@
     window.startChat = function(uid, name) {
       localStorage.setItem("chatWithUID", uid);
       localStorage.setItem("chatWithName", name);
-      window.location.href = "../pages/chat2.html";
+      window.location.href = "../pages/chat.html";
     };
 
     // Sidebar toggle
@@ -211,9 +211,19 @@
 
     // Handle foreground messages
     onMessage(messaging, payload => {
-      console.log('Foreground message:', payload);
-      // You can add custom UI/notification logic here
-    });
+  console.log('Foreground message:', payload);
+
+  const title = payload.notification?.title || 'New Message';
+  const options = {
+    body: payload.notification?.body || 'You have a new message.',
+    icon: payload.notification?.icon || '/icon.png'
+  };
+
+  // Show notification only if permission is granted
+  if (Notification.permission === 'granted') {
+    new Notification(title, options);
+  }
+});
 
     export { messaging };
   </script>
