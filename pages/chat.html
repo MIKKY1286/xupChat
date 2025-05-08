@@ -4,15 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>XupChat – Chat</title>
-  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+
+  <!-- Boxicons -->
+  <link href="https://unpkg.com/boxicons @2.1.4/css/boxicons.min.css" rel="stylesheet" />
+
+  <!-- TailwindCSS Config -->
   <script>
     tailwind.config = {
-      darkMode: 'media', // Enables dark mode via system settings
+      darkMode: 'media',
     };
   </script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com "></script>
+
+  <!-- Custom Styles -->
   <style>
-    /* Custom styles for chat bubbles */
+    /* Message bubbles */
     .message-container {
       display: flex;
       margin-bottom: 1rem;
@@ -23,6 +29,7 @@
     .message-container.received {
       justify-content: flex-start;
     }
+
     .message-bubble {
       max-width: 70%;
       padding: 0.75rem 1rem;
@@ -30,42 +37,50 @@
       position: relative;
       word-wrap: break-word;
     }
+
     .sent .message-bubble {
       background-color: #6366f1;
       color: white;
       border-bottom-right-radius: 0.25rem;
     }
+
     .received .message-bubble {
       background-color: #f3f4f6;
       color: #111827;
       border-bottom-left-radius: 0.25rem;
     }
+
     @media (prefers-color-scheme: dark) {
       .received .message-bubble {
         background-color: #1f2937;
         color: #f9fafb;
       }
     }
+
     .message-time {
       font-size: 0.75rem;
       opacity: 0.8;
       margin-top: 0.25rem;
       text-align: right;
     }
+
     .message-status {
       position: absolute;
       right: -1.5rem;
       bottom: 0;
     }
-    /* Smooth scrolling */
+
+    /* Smooth scroll */
     #chatArea {
       scroll-behavior: smooth;
     }
-    /* Typing indicator animation */
+
+    /* Typing animation */
     .typing-dots {
       display: inline-flex;
       align-items: center;
     }
+
     .typing-dots span {
       height: 8px;
       width: 8px;
@@ -75,19 +90,18 @@
       display: inline-block;
       animation: typing 1s infinite ease-in-out;
     }
+
     .typing-dots span:nth-child(2) {
       animation-delay: 0.2s;
     }
+
     .typing-dots span:nth-child(3) {
       animation-delay: 0.4s;
     }
+
     @keyframes typing {
-      0%, 100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-5px);
-      }
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
     }
 
     /* Date separator */
@@ -95,9 +109,10 @@
       text-align: center;
       margin: 1rem 0;
     }
+
     .date-separator span {
-      background-color: #e5e7eb ;
-      padding: 6px 8px 6px 8px;
+      background-color: #e5e7eb;
+      padding: 6px 8px;
       border-radius: 15px;
     }
   </style>
@@ -111,9 +126,7 @@
         <h1 id="chatUserName" class="text-lg font-bold truncate">Loading...</h1>
         <div id="typingIndicator" class="text-xs hidden">
           <span class="typing-dots">
-            <span></span>
-            <span></span>
-            <span></span>
+            <span></span><span></span><span></span>
           </span>
           <span id="typingText">typing</span>
         </div>
@@ -125,30 +138,37 @@
 
     <!-- Chat Area -->
     <div id="chatArea" class="flex-1 p-4 overflow-y-auto bg-gray-50">
-      <div id="messagesContainer" class="space-y-2">
-        <!-- Messages will be dynamically injected here -->
-      </div>
+      <div id="messagesContainer" class="space-y-2"></div>
     </div>
 
     <!-- Message Input -->
     <div class="p-3 bg-white border-t flex items-center">
-      <input type="text" id="messageInput"
-        class="flex-1 p-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-300"
-        placeholder="Type a message..."
-        autocomplete="off" />
+      <input type="text"
+             id="messageInput"
+             class="flex-1 p-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-300"
+             placeholder="Type a message..."
+             autocomplete="off" />
       <button id="sendBtn" class="ml-2 bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-700 transition">
         <i class='bx bx-send text-xl'></i>
       </button>
     </div>
   </div>
 
-  <!-- SweetAlert for confirmation dialogs -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- SweetAlert -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2 @11"></script>
 
-  <!-- Firebase SDK & Chat Script -->
+  <!-- Firebase SDK -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+    import {
+      initializeApp
+    } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js ";
+
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js ";
+
     import {
       getFirestore,
       collection,
@@ -161,8 +181,13 @@
       doc,
       setDoc,
       orderBy
-    } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-    import { getMessaging, onMessage } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-messaging.js";
+    } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js ";
+
+    import {
+      getMessaging,
+      getToken,
+      onMessage
+    } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-messaging.js ";
 
     // Firebase Configuration
     const firebaseConfig = {
@@ -183,7 +208,6 @@
     // Local Storage
     const chatWithUID = localStorage.getItem("chatWithUID");
     const chatWithName = localStorage.getItem("chatWithName");
-
     let currentUserID = null;
     const roomId = [chatWithUID, auth.currentUser?.uid].sort().join("_");
 
@@ -217,7 +241,7 @@
       } else if (diffDays === 1) {
         return 'YESTERDAY';
       } else if (diffDays < 7) {
-        const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+        const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
         const dayIndex = messageDate.getDay();
         return days[dayIndex];
       } else {
@@ -225,12 +249,12 @@
       }
     }
 
-    // Back to chat list
+    // Back button
     document.getElementById("backBtn").addEventListener("click", () => {
       window.location.href = "../pages/chat-list.html";
     });
 
-    // Handle logout with confirmation
+    // Logout handler
     document.getElementById("logoutBtn").addEventListener("click", async () => {
       const result = await Swal.fire({
         title: 'Log Out?',
@@ -251,18 +275,50 @@
       }
     });
 
-    // Auth listener
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        currentUserID = user.uid;
-        chatUserName.innerText = chatWithName || "Chat";
-        loadMessages();
-      } else {
-        window.location.href = "login.html";
-      }
-    });
+    // Auth state listener
+    onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUserID = user.uid;
+    chatUserName.innerText = chatWithName || "Chat";
 
-    // Load chat messages
+    // Request notification permission
+    if ("Notification" in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        console.log("Notification permission granted.");
+
+        try {
+          // Register service worker
+          const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+
+          // Get VAPID key from Firebase Console → Project Settings → Cloud Messaging
+          const vapidKey = 'BJMvvk8ACDZsHb6q7TSuZG2L_cFlqDIMIBxPCHEo1hBSTCxpBfDeTnvc-88pt08tz3s5QW5PlhX8eg28wcysGso';
+
+          // Get FCM token
+          const token = await getToken(messaging, {
+            vapidKey,
+            serviceWorkerRegistration: registration
+          });
+
+          if (token) {
+            await setDoc(doc(db, "fcmTokens", user.uid), { token });
+          }
+        } catch (error) {
+          console.error("Service Worker or FCM Token Error:", error);
+        }
+      }
+    }
+
+    loadMessages();
+  } else {
+    window.location.href = "./login.html";
+  }
+});
+navigator.serviceWorker.ready.then(() => {
+  console.log('Service Worker is ready.');
+});
+
+    // Load Messages
     function loadMessages() {
       const messagesRef = collection(db, "chats");
       const chatQuery = query(
@@ -275,8 +331,6 @@
 
       onSnapshot(chatQuery, (snapshot) => {
         messagesContainer.innerHTML = "";
-        let first = true;
-
         snapshot.forEach((docSnap) => {
           const msg = docSnap.data();
           const isSent = msg.sender === currentUserID;
@@ -285,45 +339,36 @@
           // Only show separator when date changes
           const messageDate = new Date(date);
           messageDate.setHours(0, 0, 0, 0);
-
           if (!lastMessageDate || messageDate.getTime() !== lastMessageDate.getTime()) {
             const dayLabel = getDayLabel(date);
-
             const separator = document.createElement("div");
             separator.className = "date-separator";
             separator.innerHTML = `<span>${dayLabel}</span>`;
             messagesContainer.appendChild(separator);
-
             lastMessageDate = messageDate;
           }
 
           // Create message bubble
           const messageDiv = document.createElement("div");
           messageDiv.className = `message-container ${isSent ? 'sent' : 'received'}`;
-
           const bubbleDiv = document.createElement("div");
           bubbleDiv.className = "message-bubble";
-
           const textDiv = document.createElement("div");
           textDiv.textContent = msg.text;
           bubbleDiv.appendChild(textDiv);
-
           const timeDiv = document.createElement("div");
           timeDiv.className = "message-time";
           timeDiv.textContent = formatTimestamp(msg.timestamp);
           bubbleDiv.appendChild(timeDiv);
-
           if (isSent) {
             const statusDiv = document.createElement("div");
             statusDiv.className = "message-status";
             statusDiv.innerHTML = '<i class="bx bx-check text-xs"></i>';
             bubbleDiv.appendChild(statusDiv);
           }
-
           messageDiv.appendChild(bubbleDiv);
           messagesContainer.appendChild(messageDiv);
         });
-
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
       });
 
@@ -338,7 +383,7 @@
       });
     }
 
-    // Send message on Enter key or button click
+    // Send Message
     function sendMessage() {
       const text = messageInput.value.trim();
       if (!text) return;
@@ -353,23 +398,27 @@
         replyText: null
       };
 
-      addDoc(collection(db, "chats"), message);
-      messageInput.value = "";
-      updateTypingStatus(false);
+      addDoc(collection(db, "chats"), message)
+        .then(() => {
+          messageInput.value = "";
+          updateTypingStatus(false);
+          setTimeout(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }, 100);
 
-      setTimeout(() => {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      }, 100);
+          triggerNotification(message);
+        })
+        .catch((error) => {
+          console.error("Error sending message:", error);
+        });
     }
 
     sendBtn.addEventListener("click", sendMessage);
     messageInput.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        sendMessage();
-      }
+      if (e.key === "Enter") sendMessage();
     });
 
-    // Typing logic
+    // Typing Logic
     let typingTimeout;
     messageInput.addEventListener("input", () => {
       updateTypingStatus(true);
@@ -384,26 +433,47 @@
       });
     }
 
-        // Trigger notification for recipient
-        async function triggerNotification(message) {
-      const notificationData = {
-        userId: chatWithUID, // Recipient user ID
-        senderName: auth.currentUser.displayName || "Anonymous",
-        senderAvatar: auth.currentUser.photoURL || "https://www.gravatar.com/avatar?d=mp",
-        message: message.text,
-        type: "chat_message",
-        channel: "Private Chat",
-        timestamp: serverTimestamp(),
-        read: false
-      };
+  // Trigger notification for recipient
+  async function triggerNotification(message) {
+  const tokenRef = doc(db, "fcmTokens", chatWithUID);
+  const tokenSnap = await getDoc(tokenRef);
 
-      try {
-        await addDoc(collection(db, "notifications"), notificationData);
-        console.log("Notification triggered successfully.");
-      } catch (error) {
-        console.error("Error triggering notification:", error);
-      }
+  if (!tokenSnap.exists()) {
+    console.log("No FCM token found for the receiver.");
+    return;
+  }
+
+  const fcmToken = tokenSnap.data().token;
+
+  const notificationMessage = {
+    title: auth.currentUser.displayName || "Anonymous",
+    body: message.text,
+    icon: "../images/youchat-logo.png",
+    data: {
+      click_action: "https://xup-chat.vercel.app/chat.html ",
+      roomId: message.roomId,
+      senderId: currentUserID
     }
+  };
+
+  try {
+    const response = await fetch("http://localhost:3000/send-notification", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        fcmToken,
+        message: notificationMessage
+      })
+    });
+
+    const result = await response.json();
+    console.log("Notification sent via backend:", result);
+  } catch (error) {
+    console.error("Error triggering notification:", error);
+  }
+}
 
     // Handle foreground messages
     onMessage(messaging, payload => {

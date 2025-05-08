@@ -1,6 +1,7 @@
-// Import Firebase SDKs for compatibility with service workers
-importScripts("https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.9.0/firebase-messaging-compat.js");
+// firebase-messaging-sw.js
+
+importScripts("https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js ");
+importScripts("https://www.gstatic.com/firebasejs/10.9.0/firebase-messaging-compat.js ");
 
 // Initialize Firebase with your config
 firebase.initializeApp({
@@ -16,17 +17,40 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Handle background messages
-messaging.onBackgroundMessage(function(payload) {
+messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
-  // Customize notification here
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
-    body: payload.notification.body,
-    icon: payload.notification.icon || './images/youchat-logo.png', // Make sure this exists
-    click_action: payload.notification.click_action || 'https://xup-chat.vercel.app' // Optional deep link
-  };
+  const { title, body, icon } = payload.notification || {};
 
-  // Show the notification
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  // Show a notification to the user
+  self.registration.showNotification(title, {
+    body,
+    icon: icon || './images/youchat-logo.png', // fallback icon
+    data: {
+      click_action: payload.data?.click_action || './pages/chat.html',
+      roomId: payload.data?.roomId,
+      senderId: payload.data?.senderId
+    }
+  });
+});
+
+// Handle notification click
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close(); // Close the notification
+
+  const urlToOpen = new URL(event.notification.data.click_action || './pages/chat.html', location.origin).href;
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
 });

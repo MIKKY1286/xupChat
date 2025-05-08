@@ -16,10 +16,11 @@
     "url": "https://github.com/MIKKY1286/xupChat/issues"
   },
   "homepage": "https://github.com/MIKKY1286/xupChat#readme",
-  "description": "",
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "firebase-admin": "^13.3.0"
-  }
+  },
+  "description": ""
 }
