@@ -384,6 +384,27 @@
       });
     }
 
+        // Trigger notification for recipient
+        async function triggerNotification(message) {
+        const notificationData = {
+        userId: chatWithUID, // Recipient user ID
+        senderName: auth.currentUser.displayName || "Anonymous",
+        senderAvatar: auth.currentUser.photoURL || "https://www.gravatar.com/avatar?d=mp",
+        message: message.text,
+        type: "chat_message",
+        channel: "Private Chat",
+        timestamp: serverTimestamp(),
+        read: false
+      };
+
+      try {
+        await addDoc(collection(db, "notifications"), notificationData);
+        console.log("Notification triggered successfully.");
+      } catch (error) {
+        console.error("Error triggering notification:", error);
+      }
+    }
+
     // Handle foreground messages
     onMessage(messaging, payload => {
       console.log('Foreground message:', payload);
